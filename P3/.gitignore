@@ -1,0 +1,114 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pytest
+.pytest_cache/
+.coverage
+htmlcov/
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Weights & Biases
+wandb/
+
+# Model artifacts
+artifacts/
+models/
+*.joblib
+*.pkl
+*.pickle
+
+# Data files
+data/raw/
+data/processed/
+*.csv
+*.json
+*.parquet
+
+# Logs
+logs/
+*.log
+
+# Monitoring data
+prometheus_data/
+grafana_data/
+postgres_data/
+mlflow_artifacts/
+
+# Drift detection
+baseline_emb.pkl
+drift_results/
+
+# Kubernetes secrets
+secrets/
+*.key
+*.crt
+*.pem
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+
+# Docker
+.dockerignore
+
+# Prefect
+.prefect/
+
+# Redis dumps
+dump.rdb
+
+# Backup files
+*.bak
+*.backup

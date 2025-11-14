@@ -1,0 +1,208 @@
+version: '3.8'
+
+services:
+  # Redis for caching and task queue
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # PostgreSQL for metadata and tracking
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_DB: dataops
+      POSTGRES_USER: dataops
+      POSTGRES_PASSWORD: dataops123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sql:/docker-entrypoint-initdb.d/init_db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dataops"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MLflow for experiment tracking
+  mlflow:
+    image: python:3.10-slim
+    command: >
+      bash -c "pip install mlflow psycopg2-binary &&
+               mlflow server 
+               --host 0.0.0.0 
+               --port 5000 
+               --backend-store-uri postgresql://dataops:dataops123@postgres:5432/dataops
+               --default-artifact-root /mlflow/artifacts"
+    ports:
+      - "5000:5000"
+    volumes:
+      - mlflow_data:/mlflow/artifacts
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://dataops:dataops123@postgres:5432/dataops
+
+  # Data Validator Service
+  validator:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.validator
+    volumes:
+      - ./data:/app/data
+      - ./configs:/app/configs
+      - ./scripts:/app/scripts
+      - ./models:/app/models
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://dataops:dataops123@postgres:5432/dataops
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    command: python scripts/validate_data.py --data-path data/raw/ --config-path configs/great_expectations/ --output data/reports/
+
+  # Data Processor Service
+  processor:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.processor
+    volumes:
+      - ./data:/app/data
+      - ./configs:/app/configs
+      - ./scripts:/app/scripts
+      - ./models:/app/models
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://dataops:dataops123@postgres:5432/dataops
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    command: python scripts/normalize_data.py --input data/raw/ --output data/processed/
+
+  # API Server for monitoring and control
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.processor
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./data:/app/data
+      - ./configs:/app/configs
+      - ./scripts:/app/scripts
+      - ./models:/app/models
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://dataops:dataops123@postgres:5432/dataops
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+    command: uvicorn scripts.api:app --host 0.0.0.0 --port 8000 --reload
+
+  # Streamlit Dashboard for monitoring
+  dashboard:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.processor
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./data:/app/data
+      - ./configs:/app/configs
+      - ./scripts:/app/scripts
+      - ./models:/app/models
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://dataops:dataops123@postgres:5432/dataops
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_started
+    command: streamlit run scripts/monitoring_dashboard.py --server.address=0.0.0.0 --server.port=8501
+
+  # Celery Worker for background tasks
+  worker:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.processor
+    volumes:
+      - ./data:/app/data
+      - ./configs:/app/configs
+      - ./scripts:/app/scripts
+      - ./models:/app/models
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://dataops:dataops123@postgres:5432/dataops
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    command: celery -A scripts.celery_app worker --loglevel=info
+
+  # Celery Beat for scheduled tasks
+  scheduler:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.processor
+    volumes:
+      - ./data:/app/data
+      - ./configs:/app/configs
+      - ./scripts:/app/scripts
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+      - DATABASE_URL=postgresql://dataops:dataops123@postgres:5432/dataops
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    command: celery -A scripts.celery_app beat --loglevel=info
+
+  # Nginx reverse proxy (optional)
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx.conf:/etc/nginx/nginx.conf
+      - ./data/reports:/usr/share/nginx/html/reports
+    depends_on:
+      - api
+      - dashboard
+      - mlflow
+
+volumes:
+  redis_data:
+  postgres_data:
+  mlflow_data:
+
+networks:
+  default:
+    driver: bridge

@@ -1,0 +1,33 @@
+This file lists concrete steps to achieve the requested goals for P2.
+
+Scope: P2 owns dataset ingestion/processing; ideal place for dataset publication.
+
+1) README root TL;DR
+- Add a short TL;DR at repo root if this becomes standalone. For now, P4 README includes TL;DR.
+
+2) Publish dataset v0.1 to HF + dataset_card (EN/ES)
+- Create a small sample (200 examples) from data/processed/faqs.jsonl
+- Add LICENSE (MIT or CC BY-SA per source constraints) and cite sources
+- Use Hugging Face CLI: datasets push with Dataset.from_list
+- Store dataset_card.md (EN/ES) under docs/ or root
+
+3) Eval script (F1/EM + latency)
+- Evaluate retrieval in P4 (eval.py). In P2, keep schema/quality tests only.
+
+4) LEGAL.md
+- Centralize at repo root; P2 references it in README (PII sanitization policy used by P4).
+
+5) CI smoke
+- Current workflow runs ingestion, clean, validation, tests. Concurrency + DVC guarded [P4] are added.
+
+6) DVC pipeline
+- DVC lives in P4; optionally mirror a simple dvc.yaml here if you want P2 to run standalone pipelines.
+
+7) k6 stress tests
+- Not applicable (no service). Run against P4/P3 APIs.
+
+8) Privacy sanitizer
+- Implemented in P4 (scripts/pii_sanitizer.py). Consider porting to P2 if needed upstream.
+
+9) Colab notebook
+- Provide a minimal notebook referencing P4 API and P2 data sample.

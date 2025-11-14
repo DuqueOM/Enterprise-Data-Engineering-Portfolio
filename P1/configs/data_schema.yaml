@@ -1,0 +1,119 @@
+# Data Schema Configuration
+# Define the expected structure and validation rules for datasets
+
+dataset_info:
+  name: "customer_data"
+  version: "1.0.0"
+  description: "Customer data with demographic and transaction information"
+  
+columns:
+  customer_id:
+    type: "string"
+    nullable: false
+    unique: true
+    pattern: "^[A-Z]{2}[0-9]{6}$"
+    description: "Unique customer identifier"
+    
+  email:
+    type: "string"
+    nullable: false
+    pattern: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+    description: "Customer email address"
+    
+  age:
+    type: "integer"
+    nullable: true
+    min_value: 18
+    max_value: 120
+    description: "Customer age in years"
+    
+  gender:
+    type: "string"
+    nullable: true
+    allowed_values: ["M", "F", "Other", "Prefer not to say"]
+    description: "Customer gender"
+    
+  registration_date:
+    type: "datetime"
+    nullable: false
+    format: "%Y-%m-%d"
+    description: "Date when customer registered"
+    
+  last_purchase_date:
+    type: "datetime"
+    nullable: true
+    format: "%Y-%m-%d"
+    description: "Date of last purchase"
+    
+  total_purchases:
+    type: "float"
+    nullable: false
+    min_value: 0
+    description: "Total amount of purchases"
+    
+  avg_purchase_value:
+    type: "float"
+    nullable: true
+    min_value: 0
+    description: "Average purchase value"
+    
+  customer_segment:
+    type: "string"
+    nullable: true
+    allowed_values: ["Bronze", "Silver", "Gold", "Platinum"]
+    description: "Customer segment classification"
+    
+  churn_risk:
+    type: "float"
+    nullable: true
+    min_value: 0.0
+    max_value: 1.0
+    description: "Predicted churn risk score"
+
+validation_rules:
+  # Row-level validations
+  row_count:
+    min_rows: 100
+    max_rows: 1000000
+    
+  # Column-level validations
+  completeness_threshold: 0.95  # 95% completeness required
+  duplicate_threshold: 0.01     # Max 1% duplicates allowed
+  
+  # Cross-column validations
+  date_consistency:
+    - registration_date <= last_purchase_date
+    
+  business_rules:
+    - total_purchases >= 0
+    - avg_purchase_value >= 0
+    - if total_purchases > 0 then avg_purchase_value > 0
+
+data_quality_checks:
+  # Statistical validations
+  outlier_detection:
+    method: "iqr"
+    threshold: 1.5
+    
+  # Distribution checks
+  distribution_checks:
+    - column: "age"
+      expected_distribution: "normal"
+      skewness_threshold: 2.0
+    - column: "total_purchases"
+      expected_distribution: "log_normal"
+      
+monitoring:
+  # Drift detection thresholds
+  drift_thresholds:
+    population_stability_index: 0.1
+    kolmogorov_smirnov: 0.05
+    
+  # Alerting rules
+  alerts:
+    - metric: "completeness"
+      threshold: 0.9
+      operator: "less_than"
+    - metric: "duplicate_rate"
+      threshold: 0.05
+      operator: "greater_than"

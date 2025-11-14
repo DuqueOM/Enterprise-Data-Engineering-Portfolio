@@ -1,0 +1,155 @@
+
+name: DataOps Pipeline
+
+on:
+  push:
+    paths: ['data/**', 'scripts/**', 'configs/**']
+  pull_request:
+    paths: ['data/**', 'scripts/**', 'configs/**']
+  schedule:
+    - cron: '0 2 * * *'  # Daily at 2 AM
+
+concurrency:  # [P4]
+  group: p1-${{ github.workflow }}-${{ github.ref }}  # [P4]
+  cancel-in-progress: true  # [P4]
+
+jobs:
+  data-validation:
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Cache dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Validate data quality
+        run: |
+          python scripts/validate_data.py --data-path data/raw/ --config-path configs/great_expectations/
+      
+      - name: Process and normalize data
+        run: |
+          python scripts/normalize_data.py --input data/raw/ --output data/processed/
+      
+      - name: Generate quality reports
+        run: |
+          python scripts/generate_quality_report.py --data-path data/processed/ --output data/reports/
+      
+      - name: Train baseline model
+        run: |
+          python scripts/train_baseline.py --data-path data/processed/ --model-path models/baseline/
+      
+      - name: Detect data drift
+        run: |
+          python scripts/detect_drift.py --baseline-data data/processed/baseline.csv --new-data data/processed/latest.csv
+      
+      - name: Update DVC tracking
+        run: |
+          dvc pull
+          dvc add data/processed/
+          dvc add models/
+          dvc add data/reports/
+          git add data/processed.dvc models.dvc data/reports.dvc
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git commit -m "Update processed data and models [skip ci]" || exit 0
+          dvc push
+      
+      - name: Upload quality reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: quality-reports
+          path: data/reports/
+      
+      - name: Upload models
+        uses: actions/upload-artifact@v3
+        with:
+          name: trained-models
+          path: models/
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run security scan
+        run: |
+          pip install bandit safety
+          bandit -r scripts/ -f json -o bandit-report.json || true
+          safety check --json --output safety-report.json || true
+      
+      - name: Upload security reports
+        uses: actions/upload-artifact@v3
+        with:
+          name: security-reports
+          path: "*.json"
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: data-validation
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      
+      - name: Run integration tests
+        run: |
+          pytest tests/test_integration.py -v --cov=scripts --cov-report=xml
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: integration-tests
+          name: codecov-umbrella
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [data-validation, integration-tests]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to staging
+        run: |
+          echo "Deploying to staging environment"
+          # Add staging deployment commands here
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [data-validation, integration-tests]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Deploy to production
+        run: |
+          echo "Deploying to production environment"
+          # Add production deployment commands here

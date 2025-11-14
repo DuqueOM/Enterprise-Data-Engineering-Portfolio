@@ -1,0 +1,4 @@
+
+# Replace with real government/document URLs for your chosen country/municipality
+https://www.example.gov.co/servicio/licencia-funcionamiento
+https://www.example.gov.co/servicios/impuestos-faq

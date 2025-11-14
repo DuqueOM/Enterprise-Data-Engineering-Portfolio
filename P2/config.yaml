@@ -1,0 +1,139 @@
+# Project Configuration
+project:
+  name: "PYME QA Dataset"
+  version: "1.0.0"
+  description: "Dataset de preguntas y respuestas sobre trámites administrativos para PYMEs"
+
+# Data Sources Configuration
+data_sources:
+  base_urls:
+    - url: "https://www.gov.co/home/"
+      region: "Nacional"
+      name: "Gov Colombia"
+    
+    # Add more sources as needed
+    # - url: "https://www.antioquia.gov.co/"
+    #   region: "Antioquia"
+    #   name: "Gobernación de Antioquia"
+
+# Data Processing Configuration
+processing:
+  chunk_size_chars: 1500
+  min_text_length: 10
+  max_text_length: 5000
+  duplicate_threshold: 0.9  # Similarity threshold for duplicate detection
+  
+# Validation Configuration
+validation:
+  schema:
+    required_fields: ["id", "source_url", "text", "date_fetched"]
+    optional_fields: ["region"]
+  
+  quality_thresholds:
+    completeness_rate: 95.0  # Minimum completeness percentage
+    duplicate_rate: 5.0      # Maximum allowed duplicate percentage
+    min_avg_text_length: 50  # Minimum average text length
+
+# Model Configuration
+baseline_model:
+  type: "RandomForest"
+  parameters:
+    n_estimators: 100
+    max_depth: 10
+    random_state: 42
+  
+  feature_extraction:
+    max_features: 1000
+    ngram_range: [1, 2]
+    min_df: 2
+    max_df: 0.95
+  
+  performance_threshold: 0.7  # Minimum accuracy threshold
+
+# Annotation Configuration
+annotation:
+  batch_size: 100
+  label_studio:
+    port: 8080
+    project_config:
+      title: "PYME QA Dataset Annotation"
+      description: "Annotate Q&A pairs for administrative procedures"
+  
+  labeling_schema:
+    - name: "category"
+      type: "choices"
+      choices: ["procedimiento", "costos", "documentacion", "tiempos", "contacto", "general"]
+    
+    - name: "complexity"
+      type: "choices"
+      choices: ["simple", "medio", "complejo"]
+
+# DVC Configuration
+dvc:
+  remote:
+    type: "local"  # Can be "s3", "gdrive", "azure", etc.
+    path: "/tmp/dvc-storage"
+  
+  tracking:
+    metrics_dir: "metrics"
+    plots_dir: "plots"
+    models_dir: "models"
+
+# CI/CD Configuration
+ci_cd:
+  triggers:
+    - push_to_main
+    - push_to_develop
+    - pull_request
+  
+  stages:
+    - data_validation
+    - data_tests
+    - security_scan
+    - model_training
+    - deployment
+
+# Monitoring Configuration
+monitoring:
+  alerts:
+    - metric: "model_accuracy"
+      threshold: 0.7
+      operator: "less_than"
+    
+    - metric: "data_completeness"
+      threshold: 95.0
+      operator: "less_than"
+    
+    - metric: "duplicate_rate"
+      threshold: 5.0
+      operator: "greater_than"
+
+# Reporting Configuration
+reporting:
+  output_formats: ["html", "json"]
+  schedule: "daily"
+  
+  quality_report:
+    include_charts: true
+    include_recommendations: true
+    
+  model_report:
+    include_feature_importance: true
+    include_confusion_matrix: true
+
+# Environment Configuration
+environments:
+  development:
+    dvc_remote: "local"
+    debug: true
+    log_level: "DEBUG"
+  
+  staging:
+    dvc_remote: "s3"
+    debug: false
+    log_level: "INFO"
+  
+  production:
+    dvc_remote: "s3"
+    debug: false
+    log_level: "WARNING"

@@ -1,0 +1,31 @@
+stages:
+  ingest:
+    cmd: python src/ingestion/scraper.py
+    deps:
+      - src/ingestion/scraper.py
+      - configs/sources.yaml
+    outs:
+      - data/raw/scraped_data.jsonl
+  process:
+    cmd: python src/processing/validate_and_process.py --input data/raw/scraped_data.jsonl --output data/processed/clean.jsonl
+    deps:
+      - src/processing/validate_and_process.py
+      - data/raw/scraped_data.jsonl
+    outs:
+      - data/processed/clean.jsonl
+  index:
+    cmd: python -m src.search.index_knowledge_base --input data/processed/clean.jsonl --index-out data/knowledge_base/index.faiss --meta-out data/knowledge_base/meta.jsonl
+    deps:
+      - src/search/index_knowledge_base.py
+      - data/processed/clean.jsonl
+    outs:
+      - data/knowledge_base/index.faiss
+      - data/knowledge_base/meta.jsonl
+  eval:
+    cmd: python scripts/eval.py --test data/test.jsonl --index data/knowledge_base/index.faiss --meta data/knowledge_base/meta.jsonl --out results/eval_results.csv --smoke
+    deps:
+      - scripts/eval.py
+      - data/knowledge_base/index.faiss
+      - data/knowledge_base/meta.jsonl
+    outs:
+      - results/eval_results.csv

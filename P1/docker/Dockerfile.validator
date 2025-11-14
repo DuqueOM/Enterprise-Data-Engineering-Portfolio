@@ -1,0 +1,45 @@
+# DataOps Validator Docker Image
+# Specialized container for data validation using Great Expectations
+
+FROM python:3.10-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p data/raw data/processed data/reports data/metrics models/baseline
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV DVC_LOG_LEVEL=INFO
+ENV GREAT_EXPECTATIONS_STORE=backends
+
+# Expose port for monitoring (optional)
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import great_expectations; print('OK')" || exit 1
+
+# Default command - validate data
+CMD ["python", "scripts/validate_data.py", "--data-path", "data/raw/", "--config-path", "configs/great_expectations/", "--output", "data/reports/"]
+
+# Alternative commands (can be overridden):
+# docker run dataops-validator python scripts/generate_quality_report.py --data-path data/processed/ --output data/reports/
+# docker run dataops-validator python scripts/detect_drift.py --baseline-data data/processed/baseline.csv --new-data data/processed/latest.csv

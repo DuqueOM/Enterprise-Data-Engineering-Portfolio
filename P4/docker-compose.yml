@@ -1,0 +1,16 @@
+version: '3.8'
+services:
+  p4-api:
+    build: .
+    image: p4-qa-service:latest
+    ports:
+      - "8081:8081"
+    environment:
+      - P4_INDEX_PATH=/app/data/knowledge_base/index.faiss
+      - P4_META_PATH=/app/data/knowledge_base/meta.jsonl
+      - P4_EMB_MODEL=sentence-transformers/all-MiniLM-L6-v2
+    volumes:
+      - ./data:/app/data
+      - ./configs:/app/configs
+      - ./src:/app/src
+    command: ["uvicorn", "src.api.main:app", "--host", "0.0.0.0", "--port", "8081", "--reload"]

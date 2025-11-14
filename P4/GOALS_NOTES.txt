@@ -1,0 +1,29 @@
+This file lists concrete steps to achieve the requested goals for P4.
+
+1) Ablation study (chunk size, top-k, embedding models)
+- Use: python scripts/ablation.py --chunk-sizes 600,1000,1500 \
+        --models sentence-transformers/all-MiniLM-L6-v2,all-mpnet-base-v2 \
+        --topk 1,5 --smoke
+- Report saved to results/ablation_report.csv. For full runs, remove --smoke.
+- Inputs controlled by:
+  * P4/src/ingestion/scraper.py --chunk-size
+  * P4/src/search/index_knowledge_base.py --model
+  * P4/scripts/eval.py --top_k
+
+2) ONNX / quantization experiment (latency & tradeoffs)
+- Implemented in P3/scripts/onnx_benchmark.py (CPU). Outputs results/onnx_benchmarks.csv.
+- Recommended doc: add accuracy check if you have labels; compare sklearn vs ONNX vs INT8.
+
+3) SLOs and Runbook
+- Doc: P3/docs/SLO_RUNBOOK.md with SLOs, SLIs, queries, runbook.
+- Add dashboard screenshots to P3/results/grafana/ and link in that doc.
+
+4) PR to Hugging Face / example notebooks
+- Prepare a minimal example notebook using P4 API + retrieval eval. Suggest PR to HF Forum examples or sentence-transformers examples.
+- Action:
+  * Create P4/notebooks/quickstart.ipynb showcasing ingest→process→index→query (10 min).
+  * Open PR adding that notebook to the HF forum or a related examples repo.
+
+5) Technical blog (Medium/HF)
+- Draft in P4/blog/technical_post.md
+- Include: architecture diagram (Mermaid or PNG in docs/), ablation results table, ONNX latency table, tradeoffs, future work.

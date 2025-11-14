@@ -1,0 +1,21 @@
+fastapi
+uvicorn
+gunicorn
+scikit-learn
+joblib
+numpy
+sentence-transformers
+wandb
+prefect
+requests
+pytest
+httpx
+mlflow
+prometheus-client
+pydantic
+python-dotenv
+
+# ONNX/quantization benchmark deps [P4]
+onnxruntime  # [P4]
+onnx  # [P4]
+skl2onnx  # [P4]

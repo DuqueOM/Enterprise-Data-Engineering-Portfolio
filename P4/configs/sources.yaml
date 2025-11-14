@@ -1,0 +1,21 @@
+# Fuentes iniciales para P4 - Servicio de Atención Automatizada
+# Ajusta o agrega más fuentes según tus necesidades
+
+sources:
+  - name: "DIAN - Formularios"
+    url: "https://www.dian.gov.co/formularios"
+    type: "forms"
+    region: "Nacional"
+    selectors:
+      content: "p, h2, li, .form-description"
+      title: "h1, .title"
+      date: ".date, .publication-date"
+
+  - name: "Cámara de Comercio Bogotá - Guías"
+    url: "https://www.ccb.org.co/"
+    type: "guides"
+    region: "Bogotá"
+    selectors:
+      content: "p, h2, li, .guide-content"
+      title: "h1, .guide-title"
+      date: ".date, .update-date"

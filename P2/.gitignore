@@ -1,0 +1,7 @@
+__pycache__/
+.env
+.venv/
+.ipynb_checkpoints/
+.dvc/
+data/raw/
+data/processed/*.dvc

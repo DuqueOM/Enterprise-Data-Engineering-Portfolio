@@ -1,0 +1,281 @@
+name: DataOps CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'data/**'
+      - 'scripts/**'
+      - 'dvc.yaml'
+      - 'requirements.txt'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'data/**'
+      - 'scripts/**'
+      - 'dvc.yaml'
+      - 'requirements.txt'
+  workflow_dispatch:
+
+concurrency:  # [P4]
+  group: dataops-${{ github.workflow }}-${{ github.ref }}  # [P4]
+  cancel-in-progress: true  # [P4]
+
+env:
+  PYTHON_VERSION: '3.9'
+
+jobs:
+  # Data validation and quality checks
+  data-validation:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Install DVC
+      run: pip install dvc
+    
+    - name: Run data ingestion
+      run: |
+        mkdir -p data/processed
+        python scripts/ingest.py
+    
+    - name: Run data cleaning
+      run: python scripts/clean.py
+    
+    - name: Run data validation
+      run: python scripts/validate_schema.py
+    
+    - name: Run data quality analysis
+      run: |
+        mkdir -p reports metrics
+        python scripts/data_quality.py
+    
+    - name: Run baseline model training
+      run: |
+        mkdir -p models
+        python scripts/train_baseline.py
+    
+    - name: Upload quality report
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: quality-report
+        path: reports/quality_report.html
+        retention-days: 30
+    
+    - name: Upload model artifacts
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: baseline-model
+        path: models/
+        retention-days: 30
+
+  # Data tests
+  data-tests:
+    runs-on: ubuntu-latest
+    needs: data-validation
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install pytest pytest-json-report
+    
+    - name: Run data tests
+      run: |
+        mkdir -p data/processed
+        python scripts/ingest.py
+        python scripts/clean.py
+        pytest tests/ --json-report --json-report-file=test-results.json
+    
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: test-results.json
+        retention-days: 30
+
+  # Security and dependency checks
+  security-scan:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  # Model performance monitoring
+  model-monitoring:
+    runs-on: ubuntu-latest
+    needs: data-validation
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Download model artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: baseline-model
+        path: models/
+    
+    - name: Check model performance
+      run: |
+        python -c "
+        import json
+        import sys
+        with open('models/metrics.json', 'r') as f:
+            metrics = json.load(f)
+        accuracy = metrics.get('accuracy', 0)
+        print(f'Model accuracy: {accuracy:.3f}')
+        if accuracy < 0.7:
+            print('⚠️ Model accuracy below threshold (0.7)')
+            sys.exit(1)
+        else:
+            print('✅ Model performance acceptable')
+        "
+
+  # Deploy to staging (for develop branch)
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: [data-validation, data-tests]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Deploy to staging
+      run: |
+        echo "🚀 Deploying to staging environment..."
+        # Add your staging deployment logic here
+        # For example: deploy to staging bucket, update staging API, etc.
+
+  # Deploy to production (for main branch)
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: [data-validation, data-tests, model-monitoring]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Deploy to production
+      run: |
+        echo "🚀 Deploying to production environment..."
+        # Add your production deployment logic here
+        # For example: 
+        # - Upload dataset to Hugging Face
+        # - Update production API
+        # - Notify downstream systems
+    
+    - name: Notify deployment
+      uses: 8398a7/action-slack@v3
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && always() }}
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        text: |
+          📊 DataOps Pipeline Deployment
+          Status: ${{ job.status }}
+          Branch: ${{ github.ref_name }}
+          Commit: ${{ github.sha }}
+      env:
+        SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  # Data versioning with DVC (optional)
+  data-versioning:
+    runs-on: ubuntu-latest
+    needs: data-validation
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+    
+    - name: Install DVC
+      run: pip install dvc
+    
+    - name: Configure DVC remote  # [P4]
+      if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}  # [P4]
+      run: |  # [P4]
+        REMOTE_URL='${{ secrets.DVC_REMOTE_URL }}'  # [P4]
+        if [ -n "$REMOTE_URL" ]; then  # [P4]
+          dvc remote add -d storage "$REMOTE_URL"  # [P4]
+          dvc push  # [P4]
+        else  # [P4]
+          echo "DVC remote not configured; skipping push"  # [P4]
+        fi  # [P4]
+    
+    - name: Tag dataset version
+      run: |
+        VERSION=$(date +'%Y%m%d-%H%M%S')
+        git tag dataset-v$VERSION
+        git push origin dataset-v$VERSION

@@ -1,0 +1,64 @@
+stages:
+  # Data ingestion stage
+  ingest:
+    cmd: python scripts/ingest.py
+    deps:
+      - scripts/ingest.py
+    outs:
+      - data/processed/faqs.jsonl
+    metrics:
+      - metrics/ingest.json
+
+  # Data cleaning stage
+  clean:
+    cmd: python scripts/clean.py
+    deps:
+      - scripts/clean.py
+      - data/processed/faqs.jsonl
+    outs:
+      - data/processed/faqs_clean.jsonl
+    metrics:
+      - metrics/clean.json
+
+  # Data validation stage
+  validate:
+    cmd: python scripts/validate_schema.py
+    deps:
+      - scripts/validate_schema.py
+      - data/processed/faqs_clean.jsonl
+    metrics:
+      - metrics/validation.json
+
+  # Data quality analysis stage
+  quality:
+    cmd: python scripts/data_quality.py
+    deps:
+      - scripts/data_quality.py
+      - data/processed/faqs_clean.jsonl
+    outs:
+      - reports/quality_report.html
+    metrics:
+      - metrics/quality.json
+
+  # Baseline model training stage
+  baseline_model:
+    cmd: python scripts/train_baseline.py
+    deps:
+      - scripts/train_baseline.py
+      - data/processed/faqs_clean.jsonl
+    outs:
+      - models/baseline_model.pkl
+      - models/metrics.json
+    metrics:
+      - metrics/baseline_model.json
+
+  # Annotation preparation stage
+  prepare_annotation:
+    cmd: python scripts/annotate.py
+    deps:
+      - scripts/annotate.py
+      - data/processed/faqs_clean.jsonl
+    params:
+      - annotation.batch_size
+    outs:
+      - data/annotation/label_studio_import.json

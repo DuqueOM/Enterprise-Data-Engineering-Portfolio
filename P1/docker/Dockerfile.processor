@@ -1,0 +1,48 @@
+# DataOps Processor Docker Image
+# Specialized container for data normalization, processing, and ML model training
+
+FROM python:3.10-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies for ML and data processing
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    git \
+    libpq-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements first for better caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY . .
+
+# Create necessary directories
+RUN mkdir -p data/raw data/processed data/reports data/metrics models/baseline
+
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV DVC_LOG_LEVEL=INFO
+ENV MLFLOW_TRACKING_URI=http://localhost:5000
+ENV WANDB_PROJECT="dataops-pipeline"
+
+# Expose port for monitoring and API
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python -c "import pandas, sklearn; print('OK')" || exit 1
+
+# Default command - process and normalize data
+CMD ["python", "scripts/normalize_data.py", "--input", "data/raw/", "--output", "data/processed/"]
+
+# Alternative commands:
+# docker run dataops-processor python scripts/train_baseline.py --data-path data/processed/ --model-path models/baseline/
+# docker run dataops-processor python scripts/evaluate_model.py --model-path models/baseline/ --test-data data/processed/test.csv
+# docker run dataops-processor python scripts/generate_quality_report.py --data-path data/processed/ --output data/reports/

@@ -1,0 +1,90 @@
+
+stages:
+  # Data ingestion and validation
+  ingest:
+    cmd: python scripts/ingest_data.py --source ${source} --output data/raw/
+    deps:
+      - scripts/ingest_data.py
+      - configs/data_schema.yaml
+    outs:
+      - data/raw/
+    metrics:
+      - data/metrics/ingest_metrics.json
+
+  # Data validation with Great Expectations
+  validate:
+    cmd: python scripts/validate_data.py --data-path data/raw/ --config-path configs/great_expectations/ --output data/reports/
+    deps:
+      - scripts/validate_data.py
+      - data/raw/
+      - configs/great_expectations/
+    outs:
+      - data/reports/validation_report.json
+    metrics:
+      - data/metrics/validation_metrics.json
+
+  # Data normalization and processing
+  process:
+    cmd: python scripts/normalize_data.py --input data/raw/ --output data/processed/
+    deps:
+      - scripts/normalize_data.py
+      - data/raw/
+      - configs/data_schema.yaml
+    outs:
+      - data/processed/
+    metrics:
+      - data/metrics/processing_metrics.json
+
+  # Generate quality reports
+  quality_report:
+    cmd: python scripts/generate_quality_report.py --data-path data/processed/ --output data/reports/
+    deps:
+      - scripts/generate_quality_report.py
+      - data/processed/
+    outs:
+      - data/reports/quality_dashboard.html
+      - data/reports/quality_summary.json
+
+  # Train baseline model
+  train_baseline:
+    cmd: python scripts/train_baseline.py --data-path data/processed/ --model-path models/baseline/
+    deps:
+      - scripts/train_baseline.py
+      - data/processed/
+    outs:
+      - models/baseline/
+    metrics:
+      - models/baseline/metrics.json
+      - models/baseline/training_history.json
+
+  # Evaluate model performance
+  evaluate:
+    cmd: python scripts/evaluate_model.py --model-path models/baseline/ --test-data data/processed/test.csv
+    deps:
+      - scripts/evaluate_model.py
+      - models/baseline/
+      - data/processed/test.csv
+    metrics:
+      - models/baseline/evaluation_metrics.json
+
+  # Detect data drift
+  drift_detection:
+    cmd: python scripts/detect_drift.py --baseline-data data/processed/baseline.csv --new-data data/processed/latest.csv --threshold 0.1
+    deps:
+      - scripts/detect_drift.py
+      - data/processed/baseline.csv
+      - data/processed/latest.csv
+    outs:
+      - data/reports/dift_report.json
+    metrics:
+      - data/metrics/drift_metrics.json
+
+  # Generate final pipeline report
+  pipeline_report:
+    cmd: python scripts/generate_pipeline_report.py --data-path data/ --output data/reports/pipeline_summary.html
+    deps:
+      - scripts/generate_pipeline_report.py
+      - data/reports/
+      - models/baseline/
+    outs:
+      - data/reports/pipeline_summary.html

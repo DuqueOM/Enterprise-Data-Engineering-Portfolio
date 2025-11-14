@@ -1,0 +1,41 @@
+This file lists concrete steps to achieve the requested goals for P1.
+
+Scope: P1 serves DataOps/validation components used by P4 but remains independent.
+
+1) README root TL;DR
+- P1 already has README. Consider adding a 1-page TL;DR with quick commands:
+  * Create venv, install requirements
+  * Run validate_data, normalize_data, generate_quality_report
+
+2) Publish dataset v0.1 to HF
+- Typically handled in P2. For P1, ensure processed outputs have schema + LICENSE + source.
+
+3) LoRA smoke + push model
+- Not in P1 scope. Handled by P3 (training/inference) or a separate repo.
+
+4) Eval script (F1/EM + latency)
+- Optional in P1. Recommend keeping eval in P3 or P4.
+
+5) Video demo (script + recording)
+- Non-code. Draft script in the root video_demo_script.md.
+
+6) LEGAL.md (licenses, PII policy)
+- Non-code. Recommend central LEGAL.md at repo root; P1 references it.
+
+7) CI smoke .github/workflows/ci_smoke.yml
+- P1 already has workflows. Concurrency guard added in workflows/smoke.yml [P4].
+
+8) DVC pipeline dvc.yaml
+- Lives in P4; P1 can export expectations/schemas if needed.
+
+9) Stress tests (k6) + canary
+- Not applicable in P1 (no service). Use P3/P4.
+
+10) Cost analysis
+- Non-code. Add docs/costs.md at repo root; P1 references it.
+
+11) PII sanitizer
+- Implemented in P4; P1 can re-use.
+
+12) Colab notebook
+- Optional. Keep in P4 or a separate demos folder.

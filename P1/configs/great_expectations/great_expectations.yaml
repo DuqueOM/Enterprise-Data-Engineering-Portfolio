@@ -1,0 +1,142 @@
+# Great Expectations Configuration
+# Data validation expectations and rules
+
+config_version: 3.0.0
+
+datasources:
+  filesystem:
+    class_name: Datasource
+    execution_engine:
+      class_name: PandasExecutionEngine
+    data_connectors:
+      default_runtime_data_connector:
+        class_name: RuntimeDataConnector
+        batch_identifiers:
+          - default_identifier_name
+      default_inferred_data_connector_name:
+        class_name: InferredAssetFilesystemDataConnector
+        base_directory: ../../data/raw/
+        default_regex:
+          pattern: (.*)\\.csv
+          group_names:
+            - data_asset_name
+
+expectations_store_name: expectations_store
+validations_store_name: validations_store
+evaluation_parameter_store_name: evaluation_parameter_store
+
+stores:
+  expectations_store:
+    class_name: ExpectationsStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: expectations/
+      
+  validations_store:
+    class_name: ValidationsStore
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: uncommitted/validations/
+      
+  evaluation_parameter_store:
+    class_name: EvaluationParameterStore
+    store_backend:
+      class_name: InMemoryEvaluationParameterStoreBackend
+
+validation_operators:
+  default_validation_operator:
+    class_name: ActionListValidationOperator
+    action_list:
+      - name: store_validation_result
+        action:
+          class_name: StoreValidationResultAction
+      - name: update_data_docs
+        action:
+          class_name: UpdateDataDocsAction
+          site_names: [local_site]
+
+data_docs_sites:
+  local_site:
+    class_name: SiteBuilder
+    show_how_to_buttons: true
+    store_backend:
+      class_name: TupleFilesystemStoreBackend
+      base_directory: uncommitted/data_docs/local_site/
+    site_index_builder:
+      class_name: DefaultSiteIndexBuilder
+
+anonymous_usage_statistics:
+  enabled: false
+
+# Core expectations for data validation
+expectations:
+  # Table-level expectations
+  table_shape:
+    - expect_table_row_count_to_be_between:
+        min_value: 100
+        max_value: 1000000
+    - expect_table_column_count_to_equal:
+        value: 10
+        
+  # Column expectations for customer_id
+  customer_id:
+    - expect_column_values_to_not_be_null:
+        column: customer_id
+    - expect_column_values_to_be_unique:
+        column: customer_id
+    - expect_column_values_to_match_regex:
+        column: customer_id
+        regex: "^[A-Z]{2}[0-9]{6}$"
+        
+  # Column expectations for email
+  email:
+    - expect_column_values_to_not_be_null:
+        column: email
+    - expect_column_values_to_match_regex:
+        column: email
+        regex: "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+        
+  # Column expectations for age
+  age:
+    - expect_column_values_to_be_between:
+        column: age
+        min_value: 18
+        max_value: 120
+    - expect_column_values_to_be_of_type:
+        column: age
+        type_: "int64"
+        
+  # Column expectations for gender
+  gender:
+    - expect_column_values_to_be_in_set:
+        column: gender
+        value_set: ["M", "F", "Other", "Prefer not to say"]
+        
+  # Column expectations for dates
+  registration_date:
+    - expect_column_values_to_not_be_null:
+        column: registration_date
+    - expect_column_values_to_be_of_type:
+        column: registration_date
+        type_: "datetime64[ns]"
+        
+  # Column expectations for financial data
+  total_purchases:
+    - expect_column_values_to_not_be_null:
+        column: total_purchases
+    - expect_column_values_to_be_between:
+        column: total_purchases
+        min_value: 0
+    - expect_column_values_to_be_of_type:
+        column: total_purchases
+        type_: "float64"
+        
+  # Business logic expectations
+  business_rules:
+    - expect_column_pair_values_a_to_be_greater_than_b:
+        column_A: last_purchase_date
+        column_B: registration_date
+        or_equal: true
+    - expect_column_values_to_be_increasing:
+        column: total_purchases
+        sort_by_column: registration_date
