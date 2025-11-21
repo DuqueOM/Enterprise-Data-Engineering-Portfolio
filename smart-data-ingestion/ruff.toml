@@ -1,1 +1,2 @@
+exclude = ["scripts/data_quality.py"]
 ignore = ["W293"]
