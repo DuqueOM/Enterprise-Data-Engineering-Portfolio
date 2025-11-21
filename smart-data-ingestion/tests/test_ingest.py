@@ -12,15 +12,12 @@ Tests cover:
 import json
 
 # Import functions from the module
-import sys
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 import requests
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
 from scripts.ingest import (
     create_session,
     fetch_page,
@@ -204,7 +201,7 @@ class TestSaveChunksToJsonl:
             assert output_path.exists()
 
             # Verify content
-            with open(output_path, "r") as f:
+            with open(output_path) as f:
                 lines = f.readlines()
 
             assert len(lines) == 2
@@ -233,7 +230,7 @@ class TestSaveChunksToJsonl:
 
             assert output_path.exists()
 
-            with open(output_path, "r") as f:
+            with open(output_path) as f:
                 content = f.read()
 
             assert content == ""
@@ -313,7 +310,7 @@ class TestIntegration:
             # Verify file exists and contains data
             assert output_path.exists()
 
-            with open(output_path, "r") as f:
+            with open(output_path) as f:
                 lines = f.readlines()
 
             assert len(lines) > 0

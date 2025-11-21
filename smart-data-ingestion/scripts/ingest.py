@@ -16,7 +16,6 @@ import logging
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
 
 import requests
 from bs4 import BeautifulSoup
@@ -59,7 +58,9 @@ def create_session() -> requests.Session:
 
 
 def fetch_page(
-    url: str, timeout: int = DEFAULT_TIMEOUT, session: Optional[requests.Session] = None
+    url: str,
+    timeout: int = DEFAULT_TIMEOUT,
+    session: requests.Session | None = None,
 ) -> str:
     """
     Download the HTML content of a web page.
@@ -112,7 +113,7 @@ def fetch_page(
 
 def parse_html_to_chunks(
     html: str, url: str, region: str, chunk_size_chars: int = DEFAULT_CHUNK_SIZE
-) -> List[Dict[str, str]]:
+) -> list[dict[str, str]]:
     """
     Parse HTML content and split into text chunks.
 
@@ -165,7 +166,7 @@ def parse_html_to_chunks(
             continue
 
         # Generate stable unique ID
-        chunk_id = hashlib.sha1(f"{url}:{i}".encode("utf-8")).hexdigest()[:12]
+        chunk_id = hashlib.sha1(f"{url}:{i}".encode()).hexdigest()[:12]
 
         chunks.append(
             {
@@ -183,7 +184,7 @@ def parse_html_to_chunks(
     return chunks
 
 
-def save_chunks_to_jsonl(chunks: List[Dict[str, str]], output_path: str) -> None:
+def save_chunks_to_jsonl(chunks: list[dict[str, str]], output_path: str) -> None:
     """
     Save chunks to JSONL (JSON Lines) format.
 
@@ -205,16 +206,16 @@ def save_chunks_to_jsonl(chunks: List[Dict[str, str]], output_path: str) -> None
 
         logger.info(f"Successfully wrote {len(chunks)} chunks to {output_path}")
 
-    except IOError as e:
+    except OSError as e:
         logger.error(f"Failed to write to {output_path}: {e}")
         raise
 
 
 def process_urls(
-    urls: List[Tuple[str, str]],
+    urls: list[tuple[str, str]],
     chunk_size: int,
-    session: Optional[requests.Session] = None,
-) -> List[Dict[str, str]]:
+    session: requests.Session | None = None,
+) -> list[dict[str, str]]:
     """
     Process multiple URLs and extract chunks.
 
@@ -294,7 +295,7 @@ def main() -> int:
     # Load URLs
     if args.urls_file:
         try:
-            with open(args.urls_file, "r") as f:
+            with open(args.urls_file) as f:
                 urls = []
                 for line in f:
                     line = line.strip()
@@ -304,7 +305,7 @@ def main() -> int:
                     url = parts[0].strip()
                     region = parts[1].strip() if len(parts) > 1 else args.region
                     urls.append((url, region))
-        except IOError as e:
+        except OSError as e:
             logger.error(f"Failed to read URLs file: {e}")
             return 1
     else:
