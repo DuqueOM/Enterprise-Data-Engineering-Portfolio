@@ -25,7 +25,7 @@ env:
   PYTHON_VERSION: '3.10'
   PROJECT_PATH: 'mlops-deployment-system'
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/mlops-deployment-system
+  IMAGE_NAME: duqueom/enterprise-data-engineering-portfolio/mlops-deployment-system
 
 jobs:
   # ============================================================================
@@ -280,7 +280,7 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
           format: 'sarif'
           output: 'trivy-results.sarif'
           severity: 'CRITICAL,HIGH'
