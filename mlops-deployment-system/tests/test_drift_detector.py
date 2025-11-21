@@ -13,8 +13,6 @@ Author: Portfolio Team
 """
 
 import pickle
-
-# Import functions from drift_detector
 import sys
 from pathlib import Path
 from unittest.mock import Mock, patch
@@ -23,7 +21,10 @@ import numpy as np
 import pytest
 import requests
 
+# Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Import functions from drift_detector
 from drift_detector import (
     compute_embeddings,
     create_github_issue,

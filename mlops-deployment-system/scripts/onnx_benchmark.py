@@ -15,7 +15,6 @@ import os  # [P4]
 import statistics  # [P4]
 import time  # [P4]
 from pathlib import Path  # [P4]
-from typing import List, Optional, Tuple  # [P4]
 
 import joblib  # [P4]
 import numpy as np  # [P4]
@@ -31,17 +30,19 @@ def load_sklearn_model(model_path: str):  # [P4]
     return joblib.load(model_path)  # [P4]
 
 
-def prepare_inputs(model, n_samples: int, X_csv: Optional[str]) -> np.ndarray:  # [P4]
+def prepare_inputs(model, n_samples: int, X_csv: str | None) -> np.ndarray:  # [P4]
     if X_csv and os.path.exists(X_csv):  # [P4]
         data = np.loadtxt(X_csv, delimiter=",", dtype=np.float32)  # [P4]
-        return data[:n_samples] if data.ndim == 2 else data.reshape(-1, 1)[:n_samples]  # [P4]
+        return (
+            data[:n_samples] if data.ndim == 2 else data.reshape(-1, 1)[:n_samples]
+        )  # [P4]
     n_features = getattr(model, "n_features_in_", 16)  # [P4]
     rng = np.random.RandomState(0)  # [P4]
     return rng.randn(n_samples, n_features).astype(np.float32)  # [P4]
 
 
-def bench_sklearn(model, X: np.ndarray, runs: int) -> Tuple[float, float]:  # [P4]
-    latencies: List[float] = []  # [P4]
+def bench_sklearn(model, X: np.ndarray, runs: int) -> tuple[float, float]:  # [P4]
+    latencies: list[float] = []  # [P4]
     for _ in range(runs):  # [P4]
         t0 = time.time()  # [P4]
         _ = model.predict(X)  # [P4]
@@ -50,16 +51,20 @@ def bench_sklearn(model, X: np.ndarray, runs: int) -> Tuple[float, float]:  # [P
 
 
 def export_onnx(model, n_features: int, onnx_path: str):  # [P4]
-    onnx_model = convert_sklearn(model, initial_types=[("input", FloatTensorType([None, n_features]))])  # [P4]
+    onnx_model = convert_sklearn(
+        model, initial_types=[("input", FloatTensorType([None, n_features]))]
+    )  # [P4]
     with open(onnx_path, "wb") as f:  # [P4]
         f.write(onnx_model.SerializeToString())  # [P4]
 
 
-def bench_onnx(onnx_path: str, X: np.ndarray, runs: int) -> Tuple[float, float]:  # [P4]
+def bench_onnx(onnx_path: str, X: np.ndarray, runs: int) -> tuple[float, float]:  # [P4]
     so = SessionOptions()  # [P4]
-    sess = InferenceSession(onnx_path, sess_options=so, providers=["CPUExecutionProvider"])  # [P4]
+    sess = InferenceSession(
+        onnx_path, sess_options=so, providers=["CPUExecutionProvider"]
+    )  # [P4]
     input_name = sess.get_inputs()[0].name  # [P4]
-    latencies: List[float] = []  # [P4]
+    latencies: list[float] = []  # [P4]
     for _ in range(runs):  # [P4]
         t0 = time.time()  # [P4]
         _ = sess.run(None, {input_name: X})  # [P4]
@@ -70,7 +75,9 @@ def bench_onnx(onnx_path: str, X: np.ndarray, runs: int) -> Tuple[float, float]:
 def main():  # [P4]
     ap = argparse.ArgumentParser()  # [P4]
     ap.add_argument("--model_path", default="artifacts/latest/model.joblib")  # [P4]
-    ap.add_argument("--X_csv", default=None, help="CSV file with features (no header)")  # [P4]
+    ap.add_argument(
+        "--X_csv", default=None, help="CSV file with features (no header)"
+    )  # [P4]
     ap.add_argument("--runs", type=int, default=10)  # [P4]
     ap.add_argument("--out", default="results/onnx_benchmarks.csv")  # [P4]
     ap.add_argument("--quantize", action="store_true")  # [P4]

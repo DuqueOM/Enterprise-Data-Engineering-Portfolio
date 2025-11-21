@@ -24,8 +24,10 @@ import numpy as np
 import pytest
 from sklearn.linear_model import LogisticRegression
 
-# Import from train module
+# Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+# Import from train module
 from train import (
     TrainingConfig,
     TrainingMetrics,
