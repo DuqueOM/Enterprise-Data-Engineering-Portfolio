@@ -34,8 +34,11 @@ def compute_embeddings(texts: list[str], model):
 
 
 def detect_embedding_drift(baseline_emb: np.ndarray, new_emb: np.ndarray):
+    # Compute cosine similarity matrix between new embeddings and baseline
     sims = cosine_similarity(new_emb, baseline_emb)
-    mean_sim = float(np.mean(sims))
+    # For each new embedding, take the best (maximum) similarity to any baseline vector
+    max_sims = np.max(sims, axis=1)
+    mean_sim = float(np.mean(max_sims))
     drift = 1.0 - mean_sim
     return drift, mean_sim
 

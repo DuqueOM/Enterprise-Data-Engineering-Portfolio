@@ -17,6 +17,7 @@ import sys
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import drift_detector
 import numpy as np
 import pytest
 import requests
@@ -349,8 +350,10 @@ class TestIntegrationScenarios:
 
         # Simulate notifications if drift > threshold
         if drift > 0.12:
-            notify_slack("webhook_url", f"Drift: {drift}")
-            create_github_issue("token", "repo", "Drift Alert", f"Drift: {drift}")
+            drift_detector.notify_slack("webhook_url", f"Drift: {drift}")
+            drift_detector.create_github_issue(
+                "token", "repo", "Drift Alert", f"Drift: {drift}"
+            )
 
             mock_slack.assert_called_once()
             mock_github.assert_called_once()

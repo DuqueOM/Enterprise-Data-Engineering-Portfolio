@@ -5,7 +5,7 @@ import time
 import joblib
 from fastapi import FastAPI, Response
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 API_VERSION = os.environ.get("API_VERSION", "v1.0.0")  # [P4] versión de API expuesta
 
@@ -28,7 +28,7 @@ prediction_error_counter = Counter(  # [P4]
 
 
 class PredictRequest(BaseModel):
-    features: list
+    features: list[float] = Field(..., min_length=1)
 
 
 MODEL_PATH = os.environ.get("MODEL_PATH", "artifacts/latest/model.joblib")
