@@ -167,7 +167,7 @@ jobs:
         working-directory: ${{ env.PROJECT_PATH }}
         run: |
           test -f artifacts/smoke/model.joblib || exit 1
-          test -f artifacts/smoke/meta.json || exit 1
+          test -f artifacts/smoke/metadata.json || exit 1
           echo "✅ Model artifacts validated"
 
       - name: Upload model artifacts
