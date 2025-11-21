@@ -1,109 +1,118 @@
+# 🔄 DataOps Validation Pipeline
 
-# DataOps Pipeline - CI/CD para Datasets
+[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![DVC](https://img.shields.io/badge/DVC-enabled-blue.svg)](https://dvc.org/)
 
-Un sistema completo de DataOps y MLOps que implementa un pipeline CI/CD para datasets, automatizando la validación, normalización, versionado y generación de reportes de calidad de datos.
+> **Production-Grade DataOps System**  
+> Complete CI/CD pipeline for datasets with automated validation, normalization, versioning, and quality reporting.
 
-## 🎯 Concepto
+## 🎯 Overview
 
-### Perspectiva Técnica
-Este proyecto se ubica en la intersección de DataOps y MLOps, implementando:
+### Technical Perspective
+This project sits at the intersection of DataOps and MLOps, implementing:
 
-- **Infraestructura de datos**: Pipeline CI/CD para datasets usando contenedores (Docker) y versionado (DVC/Git)
-- **Automatización completa**: Cuando un nuevo dataset entra o se modifica, el pipeline:
-  - ✅ Valida (esquema, duplicados, integridad)
-  - ✅ Normaliza (tipos, codificación)
-  - ✅ Versiona y guarda en storage distribuido
-  - ✅ Genera reportes de calidad (Great Expectations)
-- **Baseline model**: Entrena un modelo de referencia para detectar drift cuando lleguen nuevos datos
+- **Data Infrastructure**: CI/CD pipeline for datasets using containers (Docker) and versioning (DVC/Git)
+- **Complete Automation**: When a new dataset enters or is modified, the pipeline:
+  - ✅ Validates (schema, duplicates, integrity)
+  - ✅ Normalizes (types, encoding)
+  - ✅ Versions and stores in distributed storage
+  - ✅ Generates quality reports (Great Expectations)
+- **Baseline Model**: Trains a reference model to detect drift when new data arrives
 
-### Perspectiva de Negocio
-Este proyecto es como crear una **biblioteca confiable de datos** para que equipos de inteligencia artificial puedan trabajar sin perder tiempo buscando, corrigiendo o limpiando información.
+### Business Value
+This project creates a **trusted data library** so AI teams can work without wasting time searching, correcting, or cleaning information.
 
-- **Reduce costos y tiempo**: Datos organizados y listos para usar
-- **Evita errores**: Detecta datos incompletos, duplicados, inconsistentes
-- **Permite auditoría**: Rastrea cambios en los datos (cumplimiento normativo)
-- **Mejora colaboración**: Todos usan la misma versión oficial de los datos
+- **Reduces Costs & Time**: Organized, ready-to-use data
+- **Prevents Errors**: Detects incomplete, duplicate, or inconsistent data
+- **Enables Auditing**: Tracks data changes (regulatory compliance)
+- **Improves Collaboration**: Everyone uses the same official data version
 
-🔹 Es una inversión en calidad, transparencia y eficiencia para cualquier empresa que trabaje con datos.
+🔹 An investment in quality, transparency, and efficiency for any data-driven organization.
 
-## 🏗️ Arquitectura
+## 🏗️ Architecture
 
 ```
-DataOps Pipeline/
+dataops-validation-pipeline/
 ├── .github/                    # CI/CD workflows
 │   └── workflows/
-│       ├── data-validation.yml # Pipeline de validación
-│       └── data-deployment.yml # Pipeline de despliegue
-├── docker/                     # Contenedores Docker
-│   ├── Dockerfile.validator    # Validador de datos
-│   └── Dockerfile.processor    # Procesador de datos
-├── scripts/                    # Scripts del pipeline
-│   ├── validate_data.py        # Validación con Great Expectations
-│   ├── normalize_data.py       # Normalización y limpieza
-│   ├── train_baseline.py       # Modelo baseline
-│   └── detect_drift.py         # Detección de drift
-├── configs/                    # Configuraciones
-│   ├── great_expectations/     # Configuración de validación
-│   └── data_schema.yaml        # Esquema de datos
-├── data/                       # Datos versionados con DVC
-│   ├── raw/                    # Datos crudos
-│   ├── processed/              # Datos procesados
-│   └── reports/                # Reportes de calidad
-├── tests/                      # Tests del pipeline
-└── docs/                       # Documentación
+│       └── smoke.yml           # Smoke test pipeline
+├── docker/                     # Docker containers
+│   ├── Dockerfile.validator    # Data validator
+│   └── Dockerfile.processor    # Data processor
+├── scripts/                    # Pipeline scripts
+│   ├── ingest.py               # Data ingestion
+│   ├── index.py                # FAISS indexing
+│   ├── eval.py                 # Evaluation
+│   ├── train_lora.py           # LoRA training
+│   ├── validate_data.py        # Great Expectations validation
+│   └── setup_demo.py           # Demo environment generator
+├── configs/                    # Configurations
+│   ├── great_expectations/     # Validation configuration
+│   └── data_schema.yaml        # Data schema
+├── data/                       # DVC-versioned data
+│   ├── raw/                    # Raw data
+│   ├── processed/              # Processed data
+│   └── reports/                # Quality reports
+├── docs/                       # Documentation
+├── notebooks/                  # Jupyter notebooks
+├── space/                      # Deployment space
+├── dvc.yaml                    # DVC pipeline definition
+├── docker-compose.yml          # Multi-service orchestration
+└── requirements.txt            # Python dependencies
 ```
 
-## 🚀 Guía Rápida de Implementación
+## 🚀 Quick Start Guide
 
-### Prerrequisitos
+### Prerequisites
 ```bash
-# Python 3.8+
+# Python 3.10+
 python --version
 
-# Docker y Docker Compose
+# Docker and Docker Compose
 docker --version
 docker-compose --version
 
-# Git y DVC
+# Git and DVC
 git --version
 dvc --version
 ```
 
-> Nota: este repositorio incluye un generador de entorno demo. Si deseas crear los scripts de ejemplo mencionados en este README (validate_data.py, normalize_data.py, train_baseline.py, etc.) y una estructura mínima de datos/configuración, ejecuta:
+> **Note**: This repository includes a demo environment generator. To create example scripts (validate_data.py, normalize_data.py, train_baseline.py, etc.) and minimal data/config structure, run:
 
 ```bash
 python scripts/setup_demo.py --rows 500
 ```
-Esto creará archivos en `scripts/`, `data/`, `configs/` y `docs/` para que puedas correr el pipeline completo end-to-end con los nombres usados en la documentación.
+This will create files in `scripts/`, `data/`, `configs/` and `docs/` so you can run the complete end-to-end pipeline with the names used in the documentation.
 
-### Paso 1: Configuración del Entorno
+### Step 1: Environment Setup
 
 ```bash
-# 1. Clonar el repositorio
-git clone <repository-url>
-cd dataops-pipeline
+# 1. Clone the repository
+git clone https://github.com/DuqueOM/Enterprise-Data-Engineering-Portfolio.git
+cd Enterprise-Data-Engineering-Portfolio/dataops-validation-pipeline
 
-# 2. Crear entorno virtual
+# 2. Create virtual environment (or use conda)
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
-# o venv\Scripts\activate  # Windows
+# or venv\Scripts\activate  # Windows
 
-# 3. Instalar dependencias
+# 3. Install dependencies
 pip install -r requirements.txt
 
-# 4. Inicializar DVC (si no está inicializado)
+# 4. Initialize DVC (if not initialized)
 dvc init
 git add .dvc
 git commit -m "Initialize DVC"
 ```
 
-### Paso 2: Configurar Storage Remoto
+### Step 2: Configure Remote Storage
 
 ```bash
-# Opción A: Storage local (para desarrollo)
+# Option A: Local storage (for development)
 dvc remote add -d myremote /tmp/dvc-storage
 
-# Opción B: Cloud storage (para producción)
+# Option B: Cloud storage (for production)
 # AWS S3
 dvc remote add -d myremote s3://my-bucket/dataops-pipeline
 dvc remote modify myremote region us-west-2
@@ -115,130 +124,130 @@ dvc remote add -d myremote gs://my-bucket/dataops-pipeline
 dvc remote add -d myremote azure://mycontainer/dataops-pipeline
 ```
 
-### Paso 3: Configurar el Pipeline de Validación
+### Step 3: Configure Validation Pipeline
 
 ```bash
-# 1. Editar configuración de Great Expectations
+# 1. Edit Great Expectations configuration
 cp configs/great_expectations/great_expectations.yaml.example configs/great_expectations/great_expectations.yaml
 
-# 2. Definir esquema de datos esperado
+# 2. Define expected data schema
 nano configs/data_schema.yaml
 
-# 3. Probar validación con datos de ejemplo
+# 3. Test validation with sample data
 python scripts/validate_data.py --data-path data/raw/sample.csv --config-path configs/great_expectations/
 ```
 
-### Paso 4: Ejecutar el Pipeline Completo
+### Step 4: Run Complete Pipeline
 
 ```bash
-# 1) Ingesta desde URLs de ejemplo
+# 1) Ingest from example URLs
 python scripts/ingest.py --urls example_urls.txt --outdir data --region "Bogotá" --chunk-words 250
 
-# 2) Construir índice FAISS para recuperación
+# 2) Build FAISS index for retrieval
 python scripts/index.py --input data/processed/faqs.jsonl --indexdir indexes --embed_model sentence-transformers/all-mpnet-base-v2
 
-# 3) Crear archivo de consultas de ejemplo y evaluar
-echo '{"question": "¿Cómo registro una empresa en Bogotá?"}' > data/processed/eval_queries.jsonl
+# 3) Create sample queries and evaluate
+echo '{"question": "How do I register a company in Bogotá?"}' > data/processed/eval_queries.jsonl
 python scripts/eval.py --indexdir indexes --queries data/processed/eval_queries.jsonl
 
-# 4) (Opcional) Entrenamiento LoRA (smoke)
-# Prepara un JSONL con campos: input_text, target_text
+# 4) (Optional) LoRA training (smoke test)
+# Prepare JSONL with fields: input_text, target_text
 python scripts/train_lora.py --train data/lora/train.jsonl --validation data/lora/val.jsonl \
   --output_dir out/lora --max_steps 10 --lora_r 8 --lora_alpha 32 --lora_dropout 0.05
 ```
 
-### Paso 5: Configurar CI/CD con GitHub Actions
+### Step 5: Configure CI/CD with GitHub Actions
 
-Este repositorio incluye `.github/workflows/smoke.yml`, que ejecuta un smoke test rápido (entrenamiento LoRA con `--max_steps` bajo) y evita ejecuciones solapadas mediante `concurrency`.
+This repository includes `.github/workflows/smoke.yml`, which runs a quick smoke test (LoRA training with low `--max_steps`) and prevents overlapping executions via `concurrency`.
 
-Recomendaciones:
-- Usa Python 3.10 en CI para alinear dependencias.
-- Mantén `--max_steps` bajo para validar el pipeline sin costos altos.
-- Ajusta triggers según tu flujo (push/PR/main).
+**Recommendations:**
+- Use Python 3.10 in CI to align dependencies
+- Keep `--max_steps` low to validate pipeline without high costs
+- Adjust triggers according to your workflow (push/PR/main)
 
-Para ejecutarlo manualmente, ve a la pestaña Actions y selecciona “Run workflow”.
+To run manually, go to the Actions tab and select "Run workflow".
 
-## 📊 Monitor de Calidad de Datos
+## 📊 Data Quality Monitoring
 
-### Métricas Automáticas
+### Automatic Metrics
 
-El sistema genera automáticamente:
+The system automatically generates:
 
-- **Reportes de validez**: Porcentaje de datos que cumplen las expectativas
-- **Estadísticas de completitud**: Valores nulos por columna
-- **Análisis de duplicados**: Registros duplicados detectados
-- **Distribuciones**: Histogramas y estadísticas descriptivas
-- **Drift detection**: Comparación con datos históricos
+- **Validity Reports**: Percentage of data meeting expectations
+- **Completeness Statistics**: Null values per column
+- **Duplicate Analysis**: Detected duplicate records
+- **Distributions**: Histograms and descriptive statistics
+- **Drift Detection**: Comparison with historical data
 
-### Visualización
+### Visualization
 
 ```bash
-# Generar dashboard de calidad
+# Generate quality dashboard
 python scripts/quality_dashboard.py --data-path data/processed/ --output data/reports/dashboard.html
 
-# Ver reportes en línea de comandos
+# View reports in command line
 python scripts/quality_summary.py --report-path data/reports/latest.json
 ```
 
-## 🐳 Dockerización
+## 🐳 Dockerization
 
-### Construir Imágenes
+### Build Images
 
 ```bash
-# Imagen de validación
+# Validation image
 docker build -f docker/Dockerfile.validator -t dataops-validator .
 
-# Imagen de procesamiento
+# Processing image
 docker build -f docker/Dockerfile.processor -t dataops-processor .
 ```
 
-### Ejecutar con Docker Compose
+### Run with Docker Compose
 
 ```bash
-# Iniciar todo el stack
+# Start the entire stack
 docker-compose up -d
 
-# Ver logs
+# View logs
 docker-compose logs -f
 
-# Ejecutar pipeline manualmente
+# Run pipeline manually
 docker-compose exec validator python scripts/validate_data.py
 docker-compose exec processor python scripts/normalize_data.py
 ```
 
-## 📈 Integración con Modelos de ML
+## 📈 ML Model Integration
 
-### Entrenamiento Baseline
+### Baseline Training
 
 ```bash
-# Entrenar modelo inicial
+# Train initial model
 python scripts/train_baseline.py \
   --data-path data/processed/ \
   --model-path models/baseline/ \
   --target-column target \
   --features feature1,feature2,feature3
 
-# Evaluar modelo
+# Evaluate model
 python scripts/evaluate_model.py \
   --model-path models/baseline/ \
   --test-data data/processed/test.csv
 ```
 
-### Detección de Drift
+### Drift Detection
 
 ```bash
-# Detectar drift en nuevos datos
+# Detect drift in new data
 python scripts/detect_drift.py \
   --baseline-data data/processed/baseline.csv \
   --new-data data/raw/new_data.csv \
   --threshold 0.1
 ```
 
-## 🔧 Configuración Avanzada
+## 🔧 Advanced Configuration
 
-### Personalizar Validaciones
+### Customize Validations
 
-Edita `configs/great_expectations/great_expectations.yaml`:
+Edit `configs/great_expectations/great_expectations.yaml`:
 
 ```yaml
 expectations:
@@ -253,7 +262,7 @@ expectations:
           max_value: 150
 ```
 
-### Configurar Notificaciones
+### Configure Notifications
 
 ```bash
 # Slack
@@ -268,43 +277,43 @@ export SMTP_PASS="your-password"
 ## 🧪 Testing
 
 ```bash
-# Ejecutar todos los tests
+# Run all tests
 pytest tests/ -v
 
-# Tests de validación
+# Validation tests
 pytest tests/test_validation.py -v
 
-# Tests de procesamiento
+# Processing tests
 pytest tests/test_processing.py -v
 
-# Tests de integración
+# Integration tests
 pytest tests/test_integration.py -v
 ```
 
-## 📚 Documentación Adicional
+## 📚 Additional Documentation
 
-- [`docs/data_schema.md`](docs/data_schema.md) - Definición de esquemas
-- [`docs/monitoring.md`](docs/monitoring.md) - Guía de monitoreo
-- [`docs/troubleshooting.md`](docs/troubleshooting.md) - Solución de problemas
+- [`docs/data_schema.md`](docs/data_schema.md) - Schema definitions
+- [`docs/monitoring.md`](docs/monitoring.md) - Monitoring guide
+- [`docs/troubleshooting.md`](docs/troubleshooting.md) - Troubleshooting guide
 
-## 🤝 Contribución
+## 🤝 Contributing
 
-1. Fork del repositorio
-2. Crear feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit cambios (`git commit -m 'Add amazing feature'`)
-4. Push al branch (`git push origin feature/amazing-feature`)
-5. Abrir Pull Request
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Open Pull Request
 
-## 📄 Licencia
+## 📄 License
 
-Este proyecto está bajo la Licencia MIT - ver el archivo [LICENSE](LICENSE) para detalles.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🆘 Soporte
+## 🆘 Support
 
-- **Issues**: Reporta problemas en GitHub Issues
-- **Discusiones**: Usa GitHub Discussions para preguntas
-- **Email**: soporte@empresa.com
+- **Issues**: [GitHub Issues](https://github.com/DuqueOM/Enterprise-Data-Engineering-Portfolio/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/DuqueOM/Enterprise-Data-Engineering-Portfolio/discussions)
+- **Documentation**: [Main README](../README.md)
 
 ---
 
-**🎯 Resultado Final**: Un sistema robusto de DataOps que garantiza calidad, consistencia y trazabilidad en tus pipelines de datos, permitiendo a tu equipo enfocarse en generar valor en lugar de limpiar datos.
+**🎯 Final Result**: A robust DataOps system that guarantees quality, consistency, and traceability in your data pipelines, allowing your team to focus on generating value instead of cleaning data.

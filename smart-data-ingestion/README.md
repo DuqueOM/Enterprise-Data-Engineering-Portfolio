@@ -10,15 +10,15 @@
 
 ## 🎯 Overview
 
-Este proyecto implementa una solución completa de **DataOps** que trata los datos como un producto. En lugar de manejar archivos Excel desorganizados, creamos un pipeline automatizado que:
+This project implements a complete **DataOps** solution that treats data as a product. Instead of managing disorganized Excel files, we create an automated pipeline that:
 
-✅ **Ahorra tiempo y costos** - Evita errores manuales en los datos  
-✅ **Mejora la calidad** - Validación automática y métricas de calidad  
-✅ **Facilita colaboración** - Equipos pueden trabajar con datos confiables  
-✅ **Control de versiones** - Siempre sabes qué versión de los datos se usó  
-✅ **Escalable** - Se puede replicar en otros proyectos sin empezar de cero  
+✅ **Saves Time & Costs** - Prevents manual data errors  
+✅ **Improves Quality** - Automated validation and quality metrics  
+✅ **Facilitates Collaboration** - Teams can work with trustworthy data  
+✅ **Version Control** - Always know which data version was used  
+✅ **Scalable** - Can be replicated to other projects without starting from scratch  
 
-## 🏗️ Arquitectura del Sistema
+## 🏗️ System Architecture
 
 ```
 ┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
@@ -37,202 +37,202 @@ Este proyecto implementa una solución completa de **DataOps** que trata los dat
 └─────────────────┘    └──────────────────┘    └─────────────────┘
 ```
 
-## 📁 Estructura del Proyecto
+## 📁 Project Structure
 
 ```
-P2/
+smart-data-ingestion/
 ├── .github/workflows/          # CI/CD pipelines
-│   └── dataops.yml            # GitHub Actions workflow
-├── data/                       # Datos (versionados con DVC)
-│   ├── raw/                   # Datos originales (no en Git)
-│   ├── processed/             # Datos procesados
-│   └── annotation/            # Datos para anotación
-├── scripts/                    # Scripts del pipeline
-│   ├── ingest.py              # Recolección de datos
-│   ├── clean.py               # Limpieza de datos
-│   ├── validate_schema.py     # Validación de esquema
-│   ├── data_quality.py        # Análisis de calidad
-│   ├── train_baseline.py      # Modelo baseline
-│   └── annotate.py            # Preparación para anotación
-├── notebooks/                  # Análisis exploratorio
-│   └── EDA.ipynb              # Jupyter notebook para EDA
-├── tests/                      # Tests automatizados
-│   └── test_schema.py         # Tests de validación
-├── models/                     # Modelos entrenados
-├── reports/                    # Reportes de calidad
-├── metrics/                    # Métricas del pipeline
-├── dvc.yaml                   # Definición del pipeline DVC
-├── requirements.txt           # Dependencias Python
-└── README.md                  # Este archivo
+│   └── ci.yml                 # GitHub Actions workflow
+├── data/                       # Data (DVC-versioned)
+│   ├── raw/                   # Raw data (not in Git)
+│   └── processed/             # Processed data
+├── scripts/                    # Pipeline scripts
+│   ├── ingest.py              # Data collection
+│   ├── clean.py               # Data cleaning
+│   ├── validate_schema.py     # Schema validation
+│   ├── data_quality.py        # Quality analysis
+│   ├── train_baseline.py      # Baseline model
+│   └── export_dataset.py      # Dataset export
+├── notebooks/                  # Exploratory analysis
+│   └── EDA.ipynb              # Jupyter notebook for EDA
+├── tests/                      # Automated tests
+│   ├── test_ingestion.py      # Ingestion tests
+│   └── test_validation.py     # Validation tests
+├── config.yaml                 # Configuration file
+├── dvc.yaml                   # DVC pipeline definition
+├── Dockerfile                  # Docker container
+├── setup.py                    # Package setup
+├── requirements.txt           # Python dependencies
+└── README.md                  # This file
 ```
 
-## 🚀 Guía de Inicio Rápido
+## 🚀 Quick Start Guide
 
-### Prerrequisitos
+### Prerequisites
 
-- Python 3.9 o superior
+- Python 3.10 or higher
 - Git
-- Opcional: Docker (para Label Studio)
-- Opcional: Cuenta en GitHub/GitLab (para CI/CD)
+- Optional: Docker (for containerization)
+- Optional: GitHub/GitLab account (for CI/CD)
 
-### Paso 1: Clonar y Configurar Entorno
+### Step 1: Clone and Configure Environment
 
 ```bash
-# Clonar el repositorio
-git clone <URL-DEL-REPOSITORIO>
-cd P2
+# Clone the repository
+git clone https://github.com/DuqueOM/Enterprise-Data-Engineering-Portfolio.git
+cd Enterprise-Data-Engineering-Portfolio/smart-data-ingestion
 
-# Crear entorno virtual
+# Create virtual environment
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
-# o
+# or
 venv\Scripts\activate     # Windows
 
-# Instalar dependencias
+# Install dependencies
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-### Paso 2: Configurar DVC (Data Version Control)
+### Step 2: Configure DVC (Data Version Control)
 
 ```bash
-# Inicializar DVC
+# Initialize DVC
 dvc init
 
-# Configurar remote storage (opcional)
-# Ejemplo con Google Drive:
-dvc remote add -d myremote gdrive://<ID-CARPETA>
-# O con S3:
+# Configure remote storage (optional)
+# Example with Google Drive:
+dvc remote add -d myremote gdrive://<FOLDER-ID>
+# Or with S3:
 dvc remote add -d myremote s3://bucket-name/path
 
-# Push datos existentes (si hay)
+# Push existing data (if any)
 dvc push
 ```
 
-### Paso 3: Ejecutar el Pipeline Localmente
+### Step 3: Run Pipeline Locally
 
 ```bash
-# 1. Recolectar datos (con flags opcionales)
+# 1. Collect data (with optional flags)
 python scripts/ingest.py \
   --output data/processed/faqs.jsonl \
   --region "Antioquia" \
   --chunk-size 1500
 
-# 2. Limpiar datos
+# 2. Clean data
 python scripts/clean.py
 
-# 3. Validar esquema y calidad
+# 3. Validate schema and quality
 python scripts/validate_schema.py
 
-# 4. Análisis de calidad
+# 4. Quality analysis
 python scripts/data_quality.py
 
-# 5. Entrenar modelo baseline
+# 5. Train baseline model
 python scripts/train_baseline.py
 
-# O ejecutar todo con DVC
+# Or run everything with DVC
 dvc repro
 ```
 
-### Paso 4: Configurar Anotación (Opcional)
+### Step 4: Configure Annotation (Optional)
 
 ```bash
-# Iniciar Label Studio con Docker
+# Start Label Studio with Docker
 docker run -it -p 8080:8080 -v $(pwd)/data:/label-studio/data heartexlabs/label-studio:latest
 
-# Configurar variables de entorno
+# Configure environment variables
 export LABEL_STUDIO_URL="http://localhost:8080"
-export LABEL_STUDIO_API_KEY="TU-API-KEY"
+export LABEL_STUDIO_API_KEY="YOUR-API-KEY"
 export LABEL_STUDIO_PROJECT_ID="1"
 
-# Importar tareas para anotación
+# Import annotation tasks
 python scripts/annotate.py
 ```
 
-### Paso 5: Analizar Resultados
+### Step 5: Analyze Results
 
 ```bash
-# Abrir Jupyter para análisis exploratorio
+# Open Jupyter for exploratory analysis
 jupyter notebook notebooks/EDA.ipynb
 
-# Ver reporte de calidad
+# View quality report
 open reports/quality_report.html
 ```
 
-## 🔧 Configuración del Pipeline
+## 🔧 Pipeline Configuration
 
-### Personalizar Fuentes de Datos
+### Customize Data Sources
 
-Edita `scripts/ingest.py` para agregar tus propias URLs:
+Edit `scripts/ingest.py` to add your own URLs:
 
 ```python
 urls = [
-    ("https://sitio-gubernamental-1.gov/faq", "Antioquia"),
-    ("https://sitio-gubernamental-2.gov/faq", "Valle del Cauca"),
-    # Agrega más URLs aquí
+    ("https://government-site-1.gov/faq", "Antioquia"),
+    ("https://government-site-2.gov/faq", "Valle del Cauca"),
+    # Add more URLs here
 ]
 ```
 
-### Configurar Validaciones
+### Configure Validations
 
-Modifica `scripts/validate_schema.py` para ajustar reglas de validación:
+Modify `scripts/validate_schema.py` to adjust validation rules:
 
 ```python
 SCHEMA = {
     "required": ["id", "source_url", "text", "date_fetched"],
     "properties": {
-        "text": {"minLength": 50},  # Mínimo 50 caracteres
-        # ... más reglas
+        "text": {"minLength": 50},  # Minimum 50 characters
+        # ... more rules
     }
 }
 ```
 
-### Personalizar Métricas de Calidad
+### Customize Quality Metrics
 
-Edita `scripts/data_quality.py` para agregar métricas personalizadas:
+Edit `scripts/data_quality.py` to add custom metrics:
 
 ```python
 def custom_quality_checks(df):
-    # Agrega tus propias validaciones
+    # Add your own validations
     pass
 ```
 
 ## 🔄 CI/CD Pipeline
 
-El pipeline automatizado se ejecuta automáticamente cuando:
+The automated pipeline runs automatically when:
 
-- **Push a main/develop**: Ejecuta validación, tests y entrenamiento
-- **Pull Request**: Ejecuta tests de calidad
-- **Manual**: Puede dispararse manualmente desde GitHub
+- **Push to main/develop**: Runs validation, tests, and training
+- **Pull Request**: Runs quality tests
+- **Manual**: Can be triggered manually from GitHub
 
-### Stages del Pipeline
+### Pipeline Stages
 
-1. **Data Validation**: Valida esquema y calidad de datos
-2. **Data Tests**: Ejecuta tests automatizados
-3. **Security Scan**: Escanea vulnerabilidades
-4. **Model Monitoring**: Verifica performance del modelo
-5. **Deploy**: Despliega a staging/producción
+1. **Data Validation**: Validates schema and data quality
+2. **Data Tests**: Runs automated tests
+3. **Security Scan**: Scans for vulnerabilities
+4. **Model Monitoring**: Verifies model performance
+5. **Deploy**: Deploys to staging/production
 
-### Configurar Secrets en GitHub
+### Configure Secrets in GitHub
 
-Ve a `Settings > Secrets and variables > Actions` y configura:
+Go to `Settings > Secrets and variables > Actions` and configure:
 
-- `DVC_REMOTE_URL`: URL del storage remoto
-- `SLACK_WEBHOOK_URL`: Para notificaciones (opcional)
+- `DVC_REMOTE_URL`: Remote storage URL
+- `SLACK_WEBHOOK_URL`: For notifications (optional)
 
-## 📊 Métricas y Monitoreo
+## 📊 Metrics and Monitoring
 
-### Métricas Automáticas
+### Automatic Metrics
 
-El pipeline genera automáticamente:
+The pipeline automatically generates:
 
-- **Completitud**: Porcentaje de datos no nulos
-- **Unicidad**: Detección de duplicados
-- **Consistencia**: Validación de formatos
-- **Calidad de texto**: Longitud, caracteres especiales
-- **Performance del modelo**: Accuracy, features importantes
+- **Completeness**: Percentage of non-null data
+- **Uniqueness**: Duplicate detection
+- **Consistency**: Format validation
+- **Text Quality**: Length, special characters
+- **Model Performance**: Accuracy, important features
 
-### Reportes
+### Reports
 
 - **HTML Report**: `reports/quality_report.html`
 - **JSON Metrics**: `metrics/quality.json`
@@ -240,95 +240,95 @@ El pipeline genera automáticamente:
 
 ## 🐛 Troubleshooting
 
-### Problemas Comunes
+### Common Issues
 
-**Error: "File not found" en validación**
+**Error: "File not found" in validation**
 ```bash
-# Asegúrate de haber ejecutado los pasos anteriores
+# Make sure you've run previous steps
 python scripts/ingest.py
 python scripts/clean.py
 ```
 
-**Error: DVC remote no configurado**
+**Error: DVC remote not configured**
 ```bash
-# Configura un remote o usa local storage
+# Configure a remote or use local storage
 dvc remote add -d local /tmp/dvc-storage
 ```
 
-**Error: Dependencias faltantes**
+**Error: Missing dependencies**
 ```bash
-# Reinstala todas las dependencias
+# Reinstall all dependencies
 pip install -r requirements.txt --force-reinstall
 ```
 
-### Logs y Debugging
+### Logs and Debugging
 
 ```bash
-# Ver logs detallados
+# View detailed logs
 export PYTHONPATH=$(pwd)
 python -v scripts/validate_schema.py
 
-# Ver estado del pipeline DVC
+# View DVC pipeline status
 dvc status
 dvc dag
 ```
 
-## 🚀 Despliegue a Producción
+## 🚀 Production Deployment
 
-### Opción 1: GitHub Actions (Automático)
+### Option 1: GitHub Actions (Automatic)
 
-El pipeline se despliega automáticamente al hacer push a `main`.
+The pipeline deploys automatically when pushing to `main`.
 
-### Opción 2: Manual
+### Option 2: Manual
 
 ```bash
-# 1. Versionar datos
+# 1. Version data
 dvc add data/processed/faqs_clean.jsonl
 dvc push
 
-# 2. Crear tag de versión
+# 2. Create version tag
 git tag dataset-v1.0.0
 git push origin dataset-v1.0.0
 
-# 3. Desplegar a producción
-# (agrega comandos específicos de tu infraestructura)
+# 3. Deploy to production
+# (add your infrastructure-specific commands)
 ```
 
-### Integración con Hugging Face
+### Integration with Hugging Face
 
 ```python
 from datasets import Dataset
 import json
 
-# Cargar datos
+# Load data
 with open('data/processed/faqs_clean.jsonl', 'r') as f:
     data = [json.loads(line) for line in f]
 
-# Crear dataset
+# Create dataset
 dataset = Dataset.from_list(data)
 
-# Subir a Hugging Face
-dataset.push_to_hub("tu-username/pyme-qa-dataset")
+# Upload to Hugging Face
+dataset.push_to_hub("your-username/pyme-qa-dataset")
 ```
 
 ## 🧪 Testing
 
 ```bash
-# Ejecutar todos los tests
+# Run all tests
 pytest tests/ -v
 
-# Ejecutar tests con coverage
+# Run tests with coverage
 pytest tests/ --cov=scripts --cov-report=html
 
-# Ejecutar tests específicos
-pytest tests/test_schema.py -v
+# Run specific tests
+pytest tests/test_ingestion.py -v
 ```
 
-## 📈 Escalando el Proyecto
+## 📈 Scaling the Project
 
-### Para Datasets Más Grandes
+### For Larger Datasets
 
-1. **Procesamiento Paralelo**:
+1. **Parallel Processing**:
 ```python
 from multiprocessing import Pool
 with Pool(processes=4) as pool:
@@ -337,83 +337,81 @@ with Pool(processes=4) as pool:
 
 2. **Cloud Storage**:
 ```bash
-# Configurar S3
+# Configure S3
 dvc remote add -d s3 s3://bucket-name
 dvc push
 ```
 
 3. **Distributed Computing**:
-Considera usar Dask o Spark para datasets muy grandes.
+Consider using Dask or Spark for very large datasets.
 
-### Para Múltiples Fuentes
+### For Multiple Sources
 
 ```python
-# Agregar soporte para APIs, bases de datos, etc.
+# Add support for APIs, databases, etc.
 def fetch_from_api(endpoint):
-    # Lógica para API
+    # API logic
     pass
 
 def fetch_from_database(query):
-    # Lógica para base de datos
+    # Database logic
     pass
 ```
 
-## 🤝 Contribución
+## 🤝 Contributing
 
-1. Fork el repositorio
-2. Crear rama de feature: `git checkout -b feature/nueva-funcionalidad`
-3. Commit cambios: `git commit -am 'Agregar nueva funcionalidad'`
-4. Push a la rama: `git push origin feature/nueva-funcionalidad`
-5. Abrir Pull Request
+1. Fork the repository
+2. Create feature branch: `git checkout -b feature/new-feature`
+3. Commit changes: `git commit -am 'Add new feature'`
+4. Push to branch: `git push origin feature/new-feature`
+5. Open Pull Request
 
-## 📄 Licencia
+## 📄 License
 
-MIT License - ver archivo [LICENSE](LICENSE) para detalles.
+MIT License - see [LICENSE](LICENSE) file for details.
 
-## 🙏 Agradecimientos
+## 🙏 Acknowledgments
 
-- [DVC](https://dvc.org/) - Para versionado de datos
-- [Label Studio](https://labelstud.io/) - Para anotación de datos
-- [Pandera](https://pandera.readthedocs.io/) - Para validación de datos
-- [Scikit-learn](https://scikit-learn.org/) - Para modelos baseline
+- [DVC](https://dvc.org/) - For data versioning
+- [Label Studio](https://labelstud.io/) - For data annotation
+- [Pandera](https://pandera.readthedocs.io/) - For data validation
+- [Scikit-learn](https://scikit-learn.org/) - For baseline models
 
-## 📞 Soporte
+## 📞 Support
 
-- 📧 Email: [tu-email@ejemplo.com]
-- 💬 Slack: [canal-de-soporte]
-- 📖 Docs: [enlace-a-documentación]
-- 🐛 Issues: [GitHub Issues](https://github.com/yourusername/p2-dataset-dataops/issues)
+- **Issues**: [GitHub Issues](https://github.com/DuqueOM/Enterprise-Data-Engineering-Portfolio/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/DuqueOM/Enterprise-Data-Engineering-Portfolio/discussions)
+- **Documentation**: [Main README](../README.md)
 
 ---
 
-**🎉 ¡Listo! Ahora tienes un pipeline de DataOps profesional automatizado.**
+**🎉 Ready!** You now have a professional automated DataOps pipeline.
 
-Para empezar, simplemente ejecuta:
+To get started, simply run:
 ```bash
-git clone <URL>
-cd P2
+git clone https://github.com/DuqueOM/Enterprise-Data-Engineering-Portfolio.git
+cd Enterprise-Data-Engineering-Portfolio/smart-data-ingestion
 pip install -r requirements.txt
 python scripts/ingest.py
 ```
 
-Y sigue los pasos descritos en esta guía.
-
+And follow the steps described in this guide.
 
 ---
 
-## Integración opcional con P4 [P4]
+## Optional Integration with Enterprise QA Service
 
-Para emitir los datos directamente al formato/ubicación esperada por P4, usa:
+To export data directly to the format/location expected by the Enterprise QA Service:
 
 ```bash
 python scripts/ingest.py \
-  --output ../P4/data/raw/faqs_p2_compatible.jsonl \
+  --output ../enterprise-qa-service/data/raw/faqs.jsonl \
   --region "Bogotá" \
-  --chunk-size 1500  # [P4]
+  --chunk-size 1500
 ```
 
-Notas:
-- El flag `--output` es opcional y no cambia el comportamiento por defecto.  # [P4]
-- El formato generado es compatible con P2 y P4 (JSONL con campos id, source_url, region, text, date_fetched).  # [P4]
-- Esto no afecta la ejecución independiente del proyecto P2.  # [P4]
+**Notes:**
+- The `--output` flag is optional and doesn't change default behavior
+- The generated format is compatible (JSONL with fields: id, source_url, region, text, date_fetched)
+- This doesn't affect independent project execution
 
