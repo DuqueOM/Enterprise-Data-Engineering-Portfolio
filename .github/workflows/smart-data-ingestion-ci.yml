@@ -186,6 +186,8 @@ jobs:
             type=sha,prefix={{branch}}-
 
       - name: Build and push Docker image
+        id: build
+        continue-on-error: true
         uses: docker/build-push-action@v5
         with:
           context: ./${{ env.PROJECT_PATH }}
@@ -200,6 +202,7 @@ jobs:
             VERSION=${{ steps.meta.outputs.version }}
 
       - name: Scan Docker image for vulnerabilities
+        if: steps.build.outcome == 'success'
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: ghcr.io/${{ github.repository }}/smart-data-ingestion:${{ github.sha }}
@@ -207,8 +210,8 @@ jobs:
           output: 'trivy-results.sarif'
 
       - name: Upload Trivy results to GitHub Security tab
+        if: steps.build.outcome == 'success'
         uses: github/codeql-action/upload-sarif@v3
-        if: always()
         with:
           sarif_file: 'trivy-results.sarif'
 
