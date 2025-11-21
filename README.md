@@ -408,7 +408,7 @@ This portfolio leverages the following open-source projects:
 
 ## 📞 Contact & Support
 
-- **Issues:** [GitHub Issues](https://github.com/yourusername/portfolio/issues)
+- **Issues:** [GitHub Issues](https://github.com/DuqueOM/Enterprise-Data-Engineering-Portfolio)
 - **Discussions:** [GitHub Discussions](https://github.com/yourusername/portfolio/discussions)
 - **Email:** duque.om@example.com
 
@@ -440,6 +440,6 @@ This portfolio leverages the following open-source projects:
 
 **🌟 Built with precision for production environments 🌟**
 
-[![Made with ❤️](https://img.shields.io/badge/Made%20with-%E2%9D%A4%EF%B8%8F-red.svg)](https://github.com/yourusername/portfolio)
+[![Made with ❤️](https://img.shields.io/badge/Made%20with-%E2%9D%A4%EF%B8%8F-red.svg)](https://github.com/DuqueOM/Enterprise-Data-Engineering-Portfolio)
 
 </div>
