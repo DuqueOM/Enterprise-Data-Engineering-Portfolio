@@ -408,8 +408,8 @@ This portfolio leverages the following open-source projects:
 
 ## 📞 Contact & Support
 
-- **Issues:** [GitHub Issues](https://github.com/DuqueOM/Enterprise-Data-Engineering-Portfolio)
-- **Discussions:** [GitHub Discussions](https://github.com/yourusername/portfolio/discussions)
+- **Issues:** [GitHub Issues](https://github.com/DuqueOM/Enterprise-Data-Engineering-Portfolio/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/DuqueOM/Enterprise-Data-Engineering-Portfolio/discussions)
 - **Email:** duque.om@example.com
 
 ---
