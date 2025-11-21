@@ -103,6 +103,7 @@ jobs:
       - name: Run unit tests
         working-directory: ${{ env.PROJECT_PATH }}
         run: |
+          export PYTHONPATH="${PYTHONPATH}:$(pwd)"
           pytest tests/ \
             --cov=. \
             --cov-report=xml \
