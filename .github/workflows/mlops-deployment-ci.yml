@@ -46,7 +46,7 @@ jobs:
       - name: Install quality tools
         run: |
           pip install ruff==0.1.9 mypy==1.7.1 bandit==1.7.6 safety==3.0.1 \
-            types-requests==2.31.0.20240106 types-PyYAML==6.0.12.12
+            types-requests==2.31.0.10 types-PyYAML==6.0.12.12
 
       - name: Lint with Ruff
         working-directory: ${{ env.PROJECT_PATH }}

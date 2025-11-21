@@ -68,7 +68,7 @@ coverage==7.3.4
 ruff==0.1.9
 mypy==1.7.1
 types-PyYAML==6.0.12.12
-types-requests==2.31.0.20240106
+types-requests==2.31.0.10  # Compatible with urllib3<2.0 (kubernetes requirement)
 
 # ===== Utilities =====
 python-dotenv==1.0.0
