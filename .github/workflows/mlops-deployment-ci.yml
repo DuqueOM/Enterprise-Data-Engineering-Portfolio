@@ -53,7 +53,7 @@ jobs:
 
       - name: Type check with mypy
         working-directory: ${{ env.PROJECT_PATH }}
-        run: mypy space/ train.py drift_detector.py --ignore-missing-imports
+        run: mypy space/ train.py drift_detector.py
         continue-on-error: true
 
       - name: Security scan with Bandit
