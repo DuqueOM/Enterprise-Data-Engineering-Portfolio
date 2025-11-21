@@ -48,7 +48,7 @@ alembic==1.13.1
 # ===== HTTP & Networking =====
 requests==2.31.0
 httpx==0.26.0
-urllib3==2.1.0
+urllib3==1.26.18  # kubernetes requires <2.0, docker requires >=1.26.0
 aiohttp==3.9.1
 
 # ===== Model Optimization =====
