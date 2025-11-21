@@ -166,7 +166,7 @@ def parse_html_to_chunks(
             continue
 
         # Generate stable unique ID
-        chunk_id = hashlib.sha1(f"{url}:{i}".encode()).hexdigest()[:12]
+        chunk_id = hashlib.sha256(f"{url}:{i}".encode()).hexdigest()[:12]
 
         chunks.append(
             {

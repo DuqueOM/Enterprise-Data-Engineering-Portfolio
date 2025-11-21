@@ -13,7 +13,8 @@ PROJECT_ID = int(os.getenv("LABEL_STUDIO_PROJECT_ID", "1"))
 def import_tasks(tasks):
     headers = {"Authorization": f"Token {API_KEY}"}
     url = f"{LABEL_STUDIO_URL}/api/projects/{PROJECT_ID}/tasks/bulk/"
-    r = requests.post(url, json=tasks, headers=headers)
+    # Add an explicit timeout to avoid hanging requests (Bandit B113)
+    r = requests.post(url, json=tasks, headers=headers, timeout=15)
     r.raise_for_status()
     return r.json()
 

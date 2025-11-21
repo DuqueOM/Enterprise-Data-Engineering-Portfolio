@@ -6,9 +6,9 @@ Trains a simple text classification model to detect data quality issues.
 import json
 import logging
 import os
-import pickle
 from pathlib import Path
 
+import joblib
 import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
@@ -160,16 +160,15 @@ def save_model_artifacts(model_data, output_dir):
 
     # Save model
     model_path = output_dir / "baseline_model.pkl"
-    with open(model_path, "wb") as f:
-        pickle.dump(
-            {
-                "model": model_data["model"],
-                "vectorizer": model_data["vectorizer"],
-                "label_encoder": model_data["label_encoder"],
-                "feature_columns": model_data["feature_columns"],
-            },
-            f,
-        )
+    joblib.dump(
+        {
+            "model": model_data["model"],
+            "vectorizer": model_data["vectorizer"],
+            "label_encoder": model_data["label_encoder"],
+            "feature_columns": model_data["feature_columns"],
+        },
+        model_path,
+    )
 
     logger.info(f"Model saved to {model_path}")
 
