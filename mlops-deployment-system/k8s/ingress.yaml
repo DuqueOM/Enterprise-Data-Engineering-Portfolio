@@ -1,0 +1,204 @@
+---
+# Ingress for MLOps deployment with TLS and advanced routing
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mlops-ingress
+  namespace: mlops
+  labels:
+    app: mlops-deployment
+    component: ingress
+  annotations:
+    # Ingress class
+    kubernetes.io/ingress.class: "nginx"
+    
+    # TLS configuration
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-connections: "50"
+    
+    # Security headers
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://example.com"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, OPTIONS"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-protocols: "TLSv1.2 TLSv1.3"
+    
+    # Custom error pages
+    nginx.ingress.kubernetes.io/custom-http-errors: "404,503"
+    
+    # Timeouts
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "30"
+    
+    # Request size limits
+    nginx.ingress.kubernetes.io/proxy-body-size: "10m"
+    
+    # Monitoring
+    nginx.ingress.kubernetes.io/enable-modsecurity: "true"
+    nginx.ingress.kubernetes.io/enable-owasp-core-rules: "true"
+    
+    # Custom headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
+      more_set_headers "Permissions-Policy: geolocation=(), microphone=(), camera=()";
+
+spec:
+  tls:
+    - hosts:
+        - mlops.example.com
+        - api.mlops.example.com
+      secretName: mlops-tls
+  
+  rules:
+    # Main application domain
+    - host: mlops.example.com
+      http:
+        paths:
+          # Health check endpoint (no auth required)
+          - path: /health
+            pathType: Exact
+            backend:
+              service:
+                name: qna-svc
+                port:
+                  number: 80
+          
+          # Metrics endpoint (Prometheus scraping)
+          - path: /metrics
+            pathType: Exact
+            backend:
+              service:
+                name: qna-svc
+                port:
+                  number: 80
+          
+          # API endpoints (with authentication)
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: qna-svc
+                port:
+                  number: 80
+          
+          # Root path
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: qna-svc
+                port:
+                  number: 80
+    
+    # API-specific domain
+    - host: api.mlops.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: qna-svc
+                port:
+                  number: 80
+
+---
+# Ingress for Canary deployment (traffic splitting)
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mlops-ingress-canary
+  namespace: mlops
+  labels:
+    app: mlops-deployment
+    component: ingress
+    deployment: canary
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    
+    # Canary annotations
+    nginx.ingress.kubernetes.io/canary: "true"
+    nginx.ingress.kubernetes.io/canary-weight: "10"  # 10% traffic to canary
+    
+    # Alternative: Route based on header
+    # nginx.ingress.kubernetes.io/canary-by-header: "X-Canary"
+    # nginx.ingress.kubernetes.io/canary-by-header-value: "true"
+    
+    # Alternative: Route based on cookie
+    # nginx.ingress.kubernetes.io/canary-by-cookie: "canary"
+
+spec:
+  tls:
+    - hosts:
+        - mlops.example.com
+      secretName: mlops-tls
+  
+  rules:
+    - host: mlops.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: qna-svc-canary
+                port:
+                  number: 80
+
+---
+# Ingress for monitoring services
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mlops-monitoring-ingress
+  namespace: mlops
+  labels:
+    app: mlops-deployment
+    component: monitoring
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    
+    # Basic auth for monitoring endpoints
+    nginx.ingress.kubernetes.io/auth-type: "basic"
+    nginx.ingress.kubernetes.io/auth-secret: "basic-auth"
+    nginx.ingress.kubernetes.io/auth-realm: "Authentication Required"
+
+spec:
+  tls:
+    - hosts:
+        - grafana.mlops.example.com
+        - prometheus.mlops.example.com
+      secretName: mlops-monitoring-tls
+  
+  rules:
+    # Grafana
+    - host: grafana.mlops.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: grafana-service
+                port:
+                  number: 3000
+    
+    # Prometheus
+    - host: prometheus.mlops.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: prometheus-service
+                port:
+                  number: 9090

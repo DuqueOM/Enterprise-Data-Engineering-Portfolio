@@ -1,0 +1,260 @@
+---
+# Network Policy for MLOps deployment - Zero Trust Security
+# Implements least-privilege network access between pods
+
+# Allow ingress traffic only from nginx-ingress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mlops-app-ingress
+  namespace: mlops
+  labels:
+    app: mlops-deployment
+    component: network-security
+spec:
+  podSelector:
+    matchLabels:
+      app: qna
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow traffic from nginx ingress controller
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 8080
+    
+    # Allow traffic from same namespace (for inter-pod communication)
+    - from:
+        - podSelector: {}
+      ports:
+        - protocol: TCP
+          port: 8080
+    
+    # Allow Prometheus scraping
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: monitoring
+        - podSelector:
+            matchLabels:
+              app: prometheus
+      ports:
+        - protocol: TCP
+          port: 8080
+
+---
+# Allow egress to external services
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: mlops-app-egress
+  namespace: mlops
+  labels:
+    app: mlops-deployment
+    component: network-security
+spec:
+  podSelector:
+    matchLabels:
+      app: qna
+  policyTypes:
+    - Egress
+  egress:
+    # Allow DNS resolution
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+        - podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+    
+    # Allow access to PostgreSQL
+    - to:
+        - podSelector:
+            matchLabels:
+              app: postgres
+      ports:
+        - protocol: TCP
+          port: 5432
+    
+    # Allow access to Redis
+    - to:
+        - podSelector:
+            matchLabels:
+              app: redis
+      ports:
+        - protocol: TCP
+          port: 6379
+    
+    # Allow access to MLflow
+    - to:
+        - podSelector:
+            matchLabels:
+              app: mlflow
+      ports:
+        - protocol: TCP
+          port: 5000
+    
+    # Allow HTTPS to external APIs (W&B, Slack, GitHub)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+    
+    # Allow HTTP for external APIs
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 80
+    
+    # Allow access to S3 (AWS)
+    - to:
+        - namespaceSelector: {}
+      ports:
+        - protocol: TCP
+          port: 443
+
+---
+# Network Policy for PostgreSQL
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: postgres-ingress
+  namespace: mlops
+  labels:
+    app: postgres
+    component: network-security
+spec:
+  podSelector:
+    matchLabels:
+      app: postgres
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow only from MLOps application
+    - from:
+        - podSelector:
+            matchLabels:
+              app: qna
+      ports:
+        - protocol: TCP
+          port: 5432
+    
+    # Allow from backup jobs
+    - from:
+        - podSelector:
+            matchLabels:
+              app: backup-job
+      ports:
+        - protocol: TCP
+          port: 5432
+
+---
+# Network Policy for Redis
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: redis-ingress
+  namespace: mlops
+  labels:
+    app: redis
+    component: network-security
+spec:
+  podSelector:
+    matchLabels:
+      app: redis
+  policyTypes:
+    - Ingress
+  ingress:
+    # Allow only from MLOps application
+    - from:
+        - podSelector:
+            matchLabels:
+              app: qna
+      ports:
+        - protocol: TCP
+          port: 6379
+
+---
+# Deny all traffic by default (defense in depth)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: mlops
+  labels:
+    component: network-security
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+
+---
+# Allow all pods to access DNS
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-dns
+  namespace: mlops
+  labels:
+    component: network-security
+spec:
+  podSelector: {}
+  policyTypes:
+    - Egress
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53
+
+---
+# Network Policy for monitoring (Prometheus)
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: prometheus-scraping
+  namespace: monitoring
+  labels:
+    app: prometheus
+    component: network-security
+spec:
+  podSelector:
+    matchLabels:
+      app: prometheus
+  policyTypes:
+    - Egress
+  egress:
+    # Allow scraping metrics from mlops namespace
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: mlops
+      ports:
+        - protocol: TCP
+          port: 8080
+    
+    # Allow DNS
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: kube-system
+      ports:
+        - protocol: UDP
+          port: 53

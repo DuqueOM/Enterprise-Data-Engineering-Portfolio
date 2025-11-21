@@ -1,0 +1,88 @@
+# Example Terraform variables for GCP MLOps deployment
+# Copy this file to terraform.tfvars and customize the values
+# ⚠️  NEVER commit terraform.tfvars to git (it's in .gitignore)
+
+#######################
+# General Configuration
+#######################
+
+project_id   = "your-gcp-project-id"
+project_name = "mlops-deployment"
+environment  = "dev"  # Change to "staging" or "prod" for other environments
+region       = "us-central1"
+node_zones   = ["us-central1-a", "us-central1-b", "us-central1-c"]
+
+#######################
+# Network Configuration
+#######################
+
+subnet_cidr    = "10.0.0.0/20"
+pods_cidr      = "10.1.0.0/16"
+services_cidr  = "10.2.0.0/20"
+
+#######################
+# GKE Configuration
+#######################
+
+release_channel = "REGULAR"  # Options: "RAPID", "REGULAR", "STABLE"
+
+# Node configuration
+node_machine_type    = "n1-standard-4"  # Use "n1-standard-8" or "n2-standard-4" for production
+node_count_per_zone  = 1
+min_node_count       = 1
+max_node_count       = 5
+
+#######################
+# GPU Nodes (Optional)
+#######################
+
+enable_gpu_nodes = false  # Set to true for ML inference with GPU
+gpu_machine_type = "n1-standard-4"
+
+#######################
+# Cloud SQL Configuration
+#######################
+
+db_tier      = "db-custom-2-7680"  # 2 vCPUs, 7.5 GB RAM. Use "db-custom-4-15360" for production
+db_disk_size = 50
+db_name      = "mlops"
+db_username  = "mlops_admin"
+db_password  = "CHANGE_ME_TO_SECURE_PASSWORD"  # Use strong password and consider Secret Manager
+
+#######################
+# Memorystore Redis
+#######################
+
+redis_memory_size = 5  # GB, use 10+ for production
+
+#######################
+# Monitoring
+#######################
+
+enable_cloud_monitoring = true
+
+#######################
+# Additional Labels
+#######################
+
+additional_labels = {
+  cost-center = "engineering"
+  team        = "mlops"
+  purpose     = "production-ml-inference"
+}
+
+#######################
+# Production Example
+#######################
+
+# For production environment, use these values:
+#
+# environment          = "prod"
+# node_machine_type    = "n1-standard-8"
+# node_count_per_zone  = 2
+# min_node_count       = 2
+# max_node_count       = 10
+# db_tier              = "db-custom-4-15360"  # 4 vCPUs, 15 GB RAM
+# db_disk_size         = 100
+# redis_memory_size    = 10
+# enable_gpu_nodes     = true

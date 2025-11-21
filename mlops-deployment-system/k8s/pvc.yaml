@@ -1,0 +1,119 @@
+---
+# PersistentVolumeClaim for model storage
+# Shared storage for model artifacts across pods
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mlops-model-storage
+  namespace: mlops
+  labels:
+    app: mlops-deployment
+    component: storage
+spec:
+  accessModes:
+    - ReadWriteMany  # Multiple pods can read/write
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: standard-rwo  # Change based on cloud provider
+  # AWS: gp3 (GP3 SSD)
+  # GCP: standard-rwo (Persistent Disk)
+  # Azure: managed-premium
+
+---
+# PersistentVolumeClaim for data cache
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mlops-data-cache
+  namespace: mlops
+  labels:
+    app: mlops-deployment
+    component: cache
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 20Gi
+  storageClassName: fast  # Use SSD-backed storage
+
+---
+# PersistentVolumeClaim for logs (optional)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mlops-logs
+  namespace: mlops
+  labels:
+    app: mlops-deployment
+    component: logging
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
+  storageClassName: standard
+
+---
+# StorageClass definitions (example for AWS)
+# Uncomment and customize based on your cloud provider
+#
+# apiVersion: storage.k8s.io/v1
+# kind: StorageClass
+# metadata:
+#   name: fast
+#   labels:
+#     app: mlops-deployment
+# provisioner: kubernetes.io/aws-ebs  # AWS
+# # provisioner: kubernetes.io/gce-pd  # GCP
+# # provisioner: kubernetes.io/azure-disk  # Azure
+# parameters:
+#   type: gp3  # AWS GP3 SSD
+#   # type: pd-ssd  # GCP SSD
+#   # storageaccounttype: Premium_LRS  # Azure Premium SSD
+#   iopsPerGB: "50"
+#   fsType: ext4
+# allowVolumeExpansion: true
+# volumeBindingMode: WaitForFirstConsumer
+# reclaimPolicy: Retain
+
+---
+# Example Deployment using PVC
+# This shows how to mount the PVC in a pod
+# apiVersion: apps/v1
+# kind: Deployment
+# metadata:
+#   name: qna-v1-with-storage
+#   namespace: mlops
+# spec:
+#   replicas: 3
+#   selector:
+#     matchLabels:
+#       app: qna
+#   template:
+#     metadata:
+#       labels:
+#         app: qna
+#     spec:
+#       containers:
+#         - name: qna
+#           image: ghcr.io/youruser/qna:stable
+#           volumeMounts:
+#             - name: model-storage
+#               mountPath: /models
+#             - name: data-cache
+#               mountPath: /cache
+#             - name: logs
+#               mountPath: /var/log/mlops
+#       volumes:
+#         - name: model-storage
+#           persistentVolumeClaim:
+#             claimName: mlops-model-storage
+#         - name: data-cache
+#           persistentVolumeClaim:
+#             claimName: mlops-data-cache
+#         - name: logs
+#           persistentVolumeClaim:
+#             claimName: mlops-logs

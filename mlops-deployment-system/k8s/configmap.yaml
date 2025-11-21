@@ -1,0 +1,261 @@
+---
+# ConfigMap for MLOps application configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mlops-config
+  namespace: mlops
+  labels:
+    app: mlops-deployment
+    component: config
+data:
+  # Application configuration
+  APP_ENV: "production"
+  LOG_LEVEL: "INFO"
+  WORKERS: "4"
+  
+  # Model configuration
+  MODEL_PATH: "/models/latest/model.joblib"
+  MODEL_VERSION: "v1.0.0"
+  MAX_BATCH_SIZE: "32"
+  
+  # Feature flags
+  ENABLE_CACHING: "true"
+  ENABLE_METRICS: "true"
+  ENABLE_DRIFT_DETECTION: "true"
+  
+  # Performance tuning
+  TIMEOUT_SECONDS: "30"
+  MAX_QUEUE_SIZE: "1000"
+  
+  # Monitoring configuration
+  PROMETHEUS_PORT: "8080"
+  METRICS_PATH: "/metrics"
+  
+  # MLflow configuration
+  MLFLOW_TRACKING_URI: "http://mlflow-service:5000"
+  
+  # Drift detection thresholds
+  DRIFT_THRESHOLD: "0.12"
+  DRIFT_CHECK_INTERVAL: "3600"  # 1 hour
+  
+  # Application settings file (YAML)
+  app-config.yaml: |
+    server:
+      host: "0.0.0.0"
+      port: 8080
+      workers: 4
+      timeout: 30
+    
+    model:
+      path: "/models/latest/model.joblib"
+      version: "v1.0.0"
+      reload_interval: 300  # 5 minutes
+      max_batch_size: 32
+    
+    features:
+      caching:
+        enabled: true
+        ttl: 3600
+        backend: "redis"
+      
+      monitoring:
+        enabled: true
+        export_interval: 15
+      
+      drift_detection:
+        enabled: true
+        threshold: 0.12
+        check_interval: 3600
+    
+    logging:
+      level: "INFO"
+      format: "json"
+      handlers:
+        - type: "console"
+        - type: "file"
+          path: "/var/log/mlops/app.log"
+          max_bytes: 10485760  # 10MB
+          backup_count: 5
+
+---
+# ConfigMap for Prometheus alerts
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mlops-prometheus-alerts
+  namespace: mlops
+  labels:
+    app: mlops-deployment
+    component: monitoring
+data:
+  alerts.yml: |
+    groups:
+      - name: mlops_alerts
+        interval: 30s
+        rules:
+          # High error rate alert
+          - alert: HighErrorRate
+            expr: |
+              (
+                rate(http_requests_total{status=~"5.."}[5m])
+                /
+                rate(http_requests_total[5m])
+              ) > 0.05
+            for: 5m
+            labels:
+              severity: warning
+              component: api
+            annotations:
+              summary: "High error rate detected"
+              description: "Error rate is {{ $value | humanizePercentage }} over the last 5 minutes"
+          
+          # High latency alert
+          - alert: HighLatency
+            expr: |
+              histogram_quantile(0.95,
+                rate(http_request_duration_seconds_bucket[5m])
+              ) > 1.0
+            for: 5m
+            labels:
+              severity: warning
+              component: api
+            annotations:
+              summary: "High latency detected"
+              description: "P95 latency is {{ $value }}s"
+          
+          # Model drift alert
+          - alert: ModelDrift
+            expr: model_drift_score > 0.15
+            for: 10m
+            labels:
+              severity: critical
+              component: ml-model
+            annotations:
+              summary: "Model drift detected"
+              description: "Drift score is {{ $value }}, exceeding threshold of 0.15"
+          
+          # High memory usage
+          - alert: HighMemoryUsage
+            expr: |
+              (
+                container_memory_usage_bytes{pod=~"qna-.*"}
+                /
+                container_spec_memory_limit_bytes{pod=~"qna-.*"}
+              ) > 0.9
+            for: 5m
+            labels:
+              severity: warning
+              component: resources
+            annotations:
+              summary: "High memory usage"
+              description: "Memory usage is {{ $value | humanizePercentage }}"
+          
+          # Pod restart alert
+          - alert: PodRestarting
+            expr: |
+              rate(kube_pod_container_status_restarts_total{namespace="mlops"}[15m]) > 0
+            for: 5m
+            labels:
+              severity: warning
+              component: infrastructure
+            annotations:
+              summary: "Pod is restarting"
+              description: "Pod {{ $labels.pod }} is restarting frequently"
+
+---
+# ConfigMap for nginx configuration (if using nginx sidecar)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mlops-nginx-config
+  namespace: mlops
+  labels:
+    app: mlops-deployment
+    component: proxy
+data:
+  nginx.conf: |
+    worker_processes auto;
+    error_log /var/log/nginx/error.log warn;
+    pid /var/run/nginx.pid;
+    
+    events {
+      worker_connections 1024;
+    }
+    
+    http {
+      include /etc/nginx/mime.types;
+      default_type application/octet-stream;
+      
+      log_format json_combined escape=json
+        '{'
+          '"time":"$time_iso8601",'
+          '"remote_addr":"$remote_addr",'
+          '"request_method":"$request_method",'
+          '"request_uri":"$request_uri",'
+          '"status":$status,'
+          '"body_bytes_sent":$body_bytes_sent,'
+          '"request_time":$request_time,'
+          '"upstream_response_time":"$upstream_response_time",'
+          '"http_user_agent":"$http_user_agent"'
+        '}';
+      
+      access_log /var/log/nginx/access.log json_combined;
+      
+      sendfile on;
+      tcp_nopush on;
+      tcp_nodelay on;
+      keepalive_timeout 65;
+      types_hash_max_size 2048;
+      
+      # Gzip compression
+      gzip on;
+      gzip_vary on;
+      gzip_proxied any;
+      gzip_comp_level 6;
+      gzip_types text/plain text/css text/xml text/javascript 
+                 application/json application/javascript application/xml+rss;
+      
+      # Rate limiting
+      limit_req_zone $binary_remote_addr zone=api_limit:10m rate=100r/s;
+      limit_req_status 429;
+      
+      upstream backend {
+        server localhost:8080;
+        keepalive 32;
+      }
+      
+      server {
+        listen 80;
+        server_name _;
+        
+        # Health check endpoint (bypass rate limiting)
+        location /health {
+          proxy_pass http://backend;
+          access_log off;
+        }
+        
+        # Metrics endpoint (bypass rate limiting)
+        location /metrics {
+          proxy_pass http://backend;
+          access_log off;
+        }
+        
+        # API endpoints (with rate limiting)
+        location / {
+          limit_req zone=api_limit burst=20 nodelay;
+          
+          proxy_pass http://backend;
+          proxy_http_version 1.1;
+          proxy_set_header Connection "";
+          proxy_set_header Host $host;
+          proxy_set_header X-Real-IP $remote_addr;
+          proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+          proxy_set_header X-Forwarded-Proto $scheme;
+          
+          proxy_connect_timeout 30s;
+          proxy_send_timeout 30s;
+          proxy_read_timeout 30s;
+        }
+      }
+    }

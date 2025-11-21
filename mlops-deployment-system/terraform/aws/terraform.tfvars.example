@@ -1,0 +1,81 @@
+# Example Terraform variables for AWS MLOps deployment
+# Copy this file to terraform.tfvars and customize the values
+# ⚠️  NEVER commit terraform.tfvars to git (it's in .gitignore)
+
+#######################
+# General Configuration
+#######################
+
+project_name = "mlops-deployment"
+environment  = "dev"  # Change to "staging" or "prod" for other environments
+aws_region   = "us-east-1"
+owner_email  = "your.email@example.com"
+
+#######################
+# VPC Configuration
+#######################
+
+vpc_cidr             = "10.0.0.0/16"
+private_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+public_subnet_cidrs  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+
+#######################
+# EKS Configuration
+#######################
+
+kubernetes_version = "1.28"
+
+# Node configuration
+node_instance_types     = ["t3.large"]  # Use ["t3.xlarge"] or ["m5.large"] for production
+node_group_min_size     = 2
+node_group_max_size     = 10
+node_group_desired_size = 3
+
+#######################
+# RDS Configuration
+#######################
+
+db_instance_class       = "db.t3.medium"  # Use "db.r5.large" or larger for production
+db_allocated_storage    = 50
+db_max_allocated_storage = 200
+db_name                 = "mlops"
+db_username             = "mlops_admin"
+# db_password is managed by AWS Secrets Manager automatically
+
+#######################
+# ElastiCache Redis
+#######################
+
+redis_node_type = "cache.t3.medium"  # Use "cache.r5.large" for production
+
+#######################
+# Monitoring
+#######################
+
+enable_cloudwatch_insights = true
+enable_prometheus          = true
+
+#######################
+# Additional Tags
+#######################
+
+additional_tags = {
+  CostCenter = "engineering"
+  Team       = "mlops"
+  Purpose    = "production-ml-inference"
+}
+
+#######################
+# Production Example
+#######################
+
+# For production environment, use these values:
+#
+# environment             = "prod"
+# node_instance_types     = ["m5.xlarge"]
+# node_group_min_size     = 3
+# node_group_max_size     = 20
+# node_group_desired_size = 5
+# db_instance_class       = "db.r5.xlarge"
+# db_allocated_storage    = 200
+# redis_node_type         = "cache.r5.large"

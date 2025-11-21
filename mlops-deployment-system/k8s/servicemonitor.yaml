@@ -1,0 +1,317 @@
+---
+# ServiceMonitor for Prometheus Operator
+# Automatically discovers and scrapes metrics from MLOps services
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mlops-app-monitor
+  namespace: mlops
+  labels:
+    app: mlops-deployment
+    component: monitoring
+    prometheus: kube-prometheus
+spec:
+  selector:
+    matchLabels:
+      app: qna
+  
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      scrapeTimeout: 10s
+      
+      # Relabeling for better metric organization
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: pod
+        - sourceLabels: [__meta_kubernetes_pod_node_name]
+          targetLabel: node
+        - sourceLabels: [__meta_kubernetes_namespace]
+          targetLabel: namespace
+        - sourceLabels: [__meta_kubernetes_pod_label_version]
+          targetLabel: version
+      
+      # Metric relabeling (filter/rename metrics)
+      metricRelabelings:
+        # Drop high-cardinality metrics
+        - sourceLabels: [__name__]
+          regex: 'http_request_duration_seconds_bucket'
+          action: drop
+        
+        # Rename metrics
+        - sourceLabels: [__name__]
+          regex: 'http_requests_total'
+          targetLabel: __name__
+          replacement: 'mlops_http_requests_total'
+
+---
+# ServiceMonitor for model performance metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mlops-model-monitor
+  namespace: mlops
+  labels:
+    app: mlops-deployment
+    component: monitoring
+    type: model-metrics
+spec:
+  selector:
+    matchLabels:
+      app: qna
+  
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+      scrapeTimeout: 15s
+      
+      # Only scrape model-specific metrics
+      metricRelabelings:
+        - sourceLabels: [__name__]
+          regex: 'model_(accuracy|precision|recall|f1|drift).*'
+          action: keep
+
+---
+# PrometheusRule for MLOps alerts
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: mlops-alerts
+  namespace: mlops
+  labels:
+    app: mlops-deployment
+    component: alerting
+    prometheus: kube-prometheus
+spec:
+  groups:
+    - name: mlops_availability
+      interval: 30s
+      rules:
+        # High error rate alert
+        - alert: MLOpsHighErrorRate
+          expr: |
+            (
+              sum(rate(mlops_http_requests_total{status=~"5.."}[5m]))
+              /
+              sum(rate(mlops_http_requests_total[5m]))
+            ) > 0.05
+          for: 5m
+          labels:
+            severity: warning
+            component: api
+            team: mlops
+          annotations:
+            summary: "High error rate detected in MLOps API"
+            description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+            runbook_url: "https://wiki.example.com/runbooks/mlops-high-error-rate"
+        
+        # Service down alert
+        - alert: MLOpsServiceDown
+          expr: up{job="mlops-app"} == 0
+          for: 1m
+          labels:
+            severity: critical
+            component: api
+            team: mlops
+          annotations:
+            summary: "MLOps service is down"
+            description: "Service {{ $labels.instance }} has been down for more than 1 minute"
+            runbook_url: "https://wiki.example.com/runbooks/mlops-service-down"
+        
+        # High latency alert
+        - alert: MLOpsHighLatency
+          expr: |
+            histogram_quantile(0.95,
+              sum(rate(http_request_duration_seconds_bucket{job="mlops-app"}[5m])) by (le)
+            ) > 1.0
+          for: 5m
+          labels:
+            severity: warning
+            component: api
+            team: mlops
+          annotations:
+            summary: "High latency in MLOps API"
+            description: "P95 latency is {{ $value }}s (threshold: 1s)"
+            runbook_url: "https://wiki.example.com/runbooks/mlops-high-latency"
+        
+        # Low throughput alert
+        - alert: MLOpsLowThroughput
+          expr: |
+            sum(rate(mlops_http_requests_total[5m])) < 10
+          for: 10m
+          labels:
+            severity: info
+            component: api
+            team: mlops
+          annotations:
+            summary: "Low request throughput in MLOps API"
+            description: "Request rate is {{ $value }} req/s (expected > 10 req/s)"
+    
+    - name: mlops_model_performance
+      interval: 1m
+      rules:
+        # Model drift alert
+        - alert: MLOpsModelDrift
+          expr: model_drift_score > 0.15
+          for: 15m
+          labels:
+            severity: critical
+            component: ml-model
+            team: mlops
+          annotations:
+            summary: "Model drift detected"
+            description: "Drift score is {{ $value }} (threshold: 0.15). Model may need retraining."
+            runbook_url: "https://wiki.example.com/runbooks/mlops-model-drift"
+        
+        # Model accuracy degradation
+        - alert: MLOpsModelAccuracyLow
+          expr: model_accuracy < 0.80
+          for: 30m
+          labels:
+            severity: warning
+            component: ml-model
+            team: mlops
+          annotations:
+            summary: "Model accuracy has degraded"
+            description: "Current accuracy is {{ $value }} (threshold: 0.80)"
+            runbook_url: "https://wiki.example.com/runbooks/mlops-low-accuracy"
+        
+        # High prediction latency
+        - alert: MLOpsPredictionLatencyHigh
+          expr: |
+            histogram_quantile(0.99,
+              sum(rate(model_prediction_duration_seconds_bucket[5m])) by (le)
+            ) > 0.5
+          for: 10m
+          labels:
+            severity: warning
+            component: ml-model
+            team: mlops
+          annotations:
+            summary: "High prediction latency"
+            description: "P99 prediction latency is {{ $value }}s (threshold: 0.5s)"
+    
+    - name: mlops_resources
+      interval: 1m
+      rules:
+        # High memory usage
+        - alert: MLOpsHighMemoryUsage
+          expr: |
+            (
+              container_memory_working_set_bytes{pod=~"qna-.*"}
+              /
+              container_spec_memory_limit_bytes{pod=~"qna-.*"}
+            ) > 0.90
+          for: 5m
+          labels:
+            severity: warning
+            component: resources
+            team: mlops
+          annotations:
+            summary: "High memory usage in MLOps pods"
+            description: "Memory usage is {{ $value | humanizePercentage }} on {{ $labels.pod }}"
+            runbook_url: "https://wiki.example.com/runbooks/mlops-high-memory"
+        
+        # High CPU usage
+        - alert: MLOpsHighCPUUsage
+          expr: |
+            (
+              rate(container_cpu_usage_seconds_total{pod=~"qna-.*"}[5m])
+              /
+              container_spec_cpu_quota{pod=~"qna-.*"}
+            ) > 0.90
+          for: 10m
+          labels:
+            severity: warning
+            component: resources
+            team: mlops
+          annotations:
+            summary: "High CPU usage in MLOps pods"
+            description: "CPU usage is {{ $value | humanizePercentage }} on {{ $labels.pod }}"
+        
+        # Pod restart alert
+        - alert: MLOpsPodRestarting
+          expr: |
+            rate(kube_pod_container_status_restarts_total{namespace="mlops"}[15m]) > 0
+          for: 5m
+          labels:
+            severity: warning
+            component: infrastructure
+            team: mlops
+          annotations:
+            summary: "MLOps pod is restarting"
+            description: "Pod {{ $labels.pod }} has restarted {{ $value }} times in the last 15 minutes"
+            runbook_url: "https://wiki.example.com/runbooks/mlops-pod-restart"
+        
+        # Pod pending alert
+        - alert: MLOpsPodPending
+          expr: |
+            kube_pod_status_phase{namespace="mlops", phase="Pending"} > 0
+          for: 5m
+          labels:
+            severity: warning
+            component: infrastructure
+            team: mlops
+          annotations:
+            summary: "MLOps pod stuck in pending state"
+            description: "Pod {{ $labels.pod }} has been pending for more than 5 minutes"
+    
+    - name: mlops_data_quality
+      interval: 5m
+      rules:
+        # Data validation failures
+        - alert: MLOpsDataValidationFailures
+          expr: |
+            rate(data_validation_failures_total[15m]) > 0.01
+          for: 10m
+          labels:
+            severity: warning
+            component: data-quality
+            team: mlops
+          annotations:
+            summary: "Data validation failures detected"
+            description: "{{ $value }} validation failures per second"
+            runbook_url: "https://wiki.example.com/runbooks/mlops-data-validation"
+        
+        # Missing features
+        - alert: MLOpsMissingFeatures
+          expr: missing_feature_count > 0
+          for: 5m
+          labels:
+            severity: warning
+            component: data-quality
+            team: mlops
+          annotations:
+            summary: "Missing features in input data"
+            description: "{{ $value }} features are missing from recent predictions"
+
+---
+# PodMonitor for scraping metrics from individual pods
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: mlops-pod-monitor
+  namespace: mlops
+  labels:
+    app: mlops-deployment
+    component: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: qna
+  
+  podMetricsEndpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+      
+      # Add pod-specific labels
+      relabelings:
+        - sourceLabels: [__meta_kubernetes_pod_name]
+          targetLabel: pod_name
+        - sourceLabels: [__meta_kubernetes_pod_ip]
+          targetLabel: pod_ip
+        - sourceLabels: [__meta_kubernetes_pod_label_version]
+          targetLabel: deployment_version
