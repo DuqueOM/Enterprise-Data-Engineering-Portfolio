@@ -1,4 +1,6 @@
-[tool.ruff]
+# Ruff configuration file
+# https://docs.astral.sh/ruff/configuration/
+
 # Enable pycodestyle (`E`, `W`), Pyflakes (`F`), isort (`I`), and pep8-naming (`N`)
 select = ["E", "F", "I", "W", "UP", "B", "N"]
 
@@ -20,16 +22,16 @@ extend-exclude = [
     "wandb",
 ]
 
-[tool.ruff.lint]
+[lint]
 # Allow unused variables when underscore-prefixed
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
-[tool.ruff.lint.per-file-ignores]
+[lint.per-file-ignores]
 # Tests can have longer lines and more complexity
 "tests/*" = ["E501"]
 # Allow pytest.raises(Exception) in tests
 "tests/test_drift_detector.py" = ["B017"]
 
-[tool.ruff.format]
+[format]
 quote-style = "double"
 indent-style = "space"
