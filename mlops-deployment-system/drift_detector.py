@@ -129,12 +129,20 @@ def main():
         logger.warning("W&B log falló: %s", e)
 
     if drift > args.threshold:
-        msg = f"DRIFT ALERT: drift={drift:.4f} (threshold={args.threshold}) mean_sim={mean_sim:.4f}"
+        msg = (
+            f"DRIFT ALERT: drift={drift:.4f} "
+            f"(threshold={args.threshold}) mean_sim={mean_sim:.4f}"
+        )
         logger.warning(msg)
         if args.slack_webhook:
             notify_slack(args.slack_webhook, msg)
         if args.github_token and args.github_repo:
-            body = f"Automatic drift alert\n\nMetrics:\n- drift: {drift}\n- mean_sim: {mean_sim}\n- sample_count: {len(new_texts)}\n\nInvestigate and consider retraining."
+            body = (
+                f"Automatic drift alert\n\n"
+                f"Metrics:\n- drift: {drift}\n- mean_sim: {mean_sim}\n"
+                f"- sample_count: {len(new_texts)}\n\n"
+                f"Investigate and consider retraining."
+            )
             create_github_issue(
                 args.github_token, args.github_repo, "DRIFT ALERT", body
             )

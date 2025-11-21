@@ -4,6 +4,9 @@
 # Enable pycodestyle (`E`, `W`), Pyflakes (`F`), isort (`I`), and pep8-naming (`N`)
 select = ["E", "F", "I", "W", "UP", "B", "N"]
 
+# Line length for E501
+line-length = 88
+
 # Ignore specific rules
 ignore = [
     "N803",  # Argument name should be lowercase (ML convention: X, y)
@@ -26,9 +29,13 @@ extend-exclude = [
 # Allow unused variables when underscore-prefixed
 dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
+[lint.isort]
+# Define first-party modules for correct import ordering
+known-first-party = ["space", "train", "drift_detector"]
+
 [lint.per-file-ignores]
-# Tests can have longer lines and more complexity
-"tests/*" = ["E501"]
+# Tests can have longer lines, module imports after sys.path, and more complexity
+"tests/*" = ["E501", "E402", "I001"]
 # Allow pytest.raises(Exception) in tests
 "tests/test_drift_detector.py" = ["B017"]
 
